@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Entity
 @Getter
 @Setter
@@ -18,4 +20,7 @@ public class Organization {
 
     @OneToOne
     private User admin;
+
+    @OneToMany(mappedBy = "Organization", )
+    private Set<User> users;
 }
