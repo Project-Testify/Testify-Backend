@@ -34,7 +34,7 @@ public class Exam {
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
     private Set<Question> questions;
 
-    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "enrolled_exam", cascade = CascadeType.ALL)
     private Set<User> users;
 
 }
