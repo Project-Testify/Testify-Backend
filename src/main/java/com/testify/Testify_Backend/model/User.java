@@ -32,4 +32,8 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @ManyToOne
+    @JoinColumn(name = "organization_id", nullable = true)
+    private long organizationId;
 }
