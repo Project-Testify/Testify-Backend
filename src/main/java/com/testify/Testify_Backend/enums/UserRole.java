@@ -1,6 +1,6 @@
 package com.testify.Testify_Backend.enums;
 
-public enum Role {
+public enum UserRole {
     USER,
     ADMIN,
     ORG_ADMIN
