@@ -48,53 +48,9 @@ public class User implements UserDetails {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    private UserRole userRole;
+    private Role role;
 
-
-    private Boolean locked;
-
-    private Boolean enabled;
-
-
-    public User(String userName, String firstName, String lastName, String email, String password, UserRole userRole, Boolean locked, Boolean enabled) {
-        this.userName = userName;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.password = password;
-        this.userRole = userRole;
-        this.locked = locked;
-        this.enabled = enabled;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(userRole.name());
-        return Collections.singletonList(authority);
-    }
-
-    @Override
-    public String getUsername() {
-        return userName;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return !locked;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
+    @ManyToOne
+    @JoinColumn(name = "organization_id", nullable = true)
+    private long organizationId;
 }
