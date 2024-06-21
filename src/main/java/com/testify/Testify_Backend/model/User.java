@@ -15,6 +15,8 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @EqualsAndHashCode
+@Getter
+@Setter
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "users")
 public class User implements UserDetails {
@@ -38,8 +40,8 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private UserRole role;
 
-    private Boolean locked;
-    private Boolean enabled;
+    private Boolean locked=false;
+    private Boolean enabled=false;
 
     public User(String email, String username, String password, UserRole role, Boolean locked, Boolean enabled) {
         this.email = email;
