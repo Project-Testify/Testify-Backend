@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.service;
 
+import com.testify.Testify_Backend.model.User;
 import com.testify.Testify_Backend.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,5 +16,12 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User with email " + email + " not found"));
+    }
+
+    public void enableUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+        user.setEnabled(true);
+        userRepository.save(user);
     }
 }
