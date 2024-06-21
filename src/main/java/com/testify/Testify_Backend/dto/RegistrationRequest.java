@@ -1,15 +1,12 @@
 package com.testify.Testify_Backend.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
-@Getter
-@AllArgsConstructor
+@Data
+@Builder
 @EqualsAndHashCode
 @ToString
 public class RegistrationRequest {
-    private final String email;
-    private final String password;
+    private String email;
+    private String password;
 }
