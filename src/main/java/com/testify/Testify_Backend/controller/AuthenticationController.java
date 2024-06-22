@@ -1,8 +1,9 @@
 package com.testify.Testify_Backend.controller;
 
-import com.testify.Testify_Backend.dto.AuthenticationRequest;
-import com.testify.Testify_Backend.dto.AuthenticationResponse;
-import com.testify.Testify_Backend.dto.RegistrationRequest;
+import com.testify.Testify_Backend.dto.requests.auth.AuthenticationRequest;
+import com.testify.Testify_Backend.dto.responses.auth.AuthenticationResponse;
+import com.testify.Testify_Backend.dto.requests.auth.RegistrationRequest;
+import com.testify.Testify_Backend.dto.responses.auth.RegisterResponse;
 import com.testify.Testify_Backend.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +16,21 @@ public class AuthenticationController {
 
     private final AuthenticationService authService;
 
+//    @PostMapping("/register")
+//    public ResponseEntity<AuthenticationResponse> register(@RequestBody RegistrationRequest request){
+//        return ResponseEntity.ok(authService.register(request));
+//    }
+
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(@RequestBody RegistrationRequest request){
-        return ResponseEntity.ok(authService.register(request));
+    public ResponseEntity<RegisterResponse> register(@RequestBody RegistrationRequest request){
+        //print request
+        System.out.println(request);
+        RegisterResponse response = authService.register(request, false);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.badRequest().body(response);
     }
 
     @PostMapping("/authenticate")

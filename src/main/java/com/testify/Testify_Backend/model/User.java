@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.testify.Testify_Backend.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,16 +41,31 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private UserRole role;
 
+    //verification by admin
+    @Builder.Default
+    private boolean verified = false;
+
     private Boolean locked=false;
+    //email verification
     private Boolean enabled=false;
 
-    public User(String email, String username, String password, UserRole role, Boolean locked, Boolean enabled) {
+    @JsonIgnore
+    @OneToMany(mappedBy = "user")
+    private List<Token> tokens;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ConfirmationToken> confirmationTokens;
+
+
+    public User(String email, String username, String password, UserRole role, Boolean locked, Boolean enabled, Boolean verified){
         this.email = email;
         this.username = username;
         this.password = password;
         this.role = role;
         this.locked = locked;
         this.enabled = enabled;
+        this.verified = verified;
     }
 
     @Override

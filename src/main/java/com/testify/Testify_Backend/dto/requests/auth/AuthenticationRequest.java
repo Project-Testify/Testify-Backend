@@ -1,4 +1,4 @@
-package com.testify.Testify_Backend.dto;
+package com.testify.Testify_Backend.dto.requests.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

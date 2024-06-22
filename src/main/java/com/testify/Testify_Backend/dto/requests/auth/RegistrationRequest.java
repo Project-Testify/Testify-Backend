@@ -1,11 +1,11 @@
-package com.testify.Testify_Backend.dto;
+package com.testify.Testify_Backend.dto.requests.auth;
 
 import lombok.*;
 
-@Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
-@EqualsAndHashCode
-@ToString
+@Data
 public class RegistrationRequest {
     private String email;
     private String password;
