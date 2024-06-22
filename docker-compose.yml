@@ -4,9 +4,9 @@ services:
     image: postgres:16
     container_name: testify-postgres
     environment:
-      POSTGRES_USER: testifyuser
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
-      POSTGRES_DB: testifydb
+      POSTGRES_DB: testify
     ports:
       - "5433:5432"
     volumes:
