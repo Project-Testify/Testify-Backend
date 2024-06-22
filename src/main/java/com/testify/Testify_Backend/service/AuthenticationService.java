@@ -1,20 +1,24 @@
 package com.testify.Testify_Backend.service;
 
-import com.testify.Testify_Backend.dto.AuthenticationRequest;
-import com.testify.Testify_Backend.dto.AuthenticationResponse;
-import com.testify.Testify_Backend.dto.RegistrationRequest;
+import com.testify.Testify_Backend.dto.requests.auth.AuthenticationRequest;
+import com.testify.Testify_Backend.dto.responses.auth.AuthenticationResponse;
+import com.testify.Testify_Backend.dto.requests.auth.RegistrationRequest;
+import com.testify.Testify_Backend.dto.responses.auth.RegisterResponse;
+import com.testify.Testify_Backend.enums.TokenType;
 import com.testify.Testify_Backend.enums.UserRole;
 import com.testify.Testify_Backend.model.ConfirmationToken;
+import com.testify.Testify_Backend.model.Token;
 import com.testify.Testify_Backend.model.User;
+import com.testify.Testify_Backend.repository.TokenRepository;
 import com.testify.Testify_Backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ModelAttribute;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -29,45 +33,112 @@ public class AuthenticationService {
     private final ConfirmationTokenService confirmationTokenService;
     private final UserService userService;
     private final EmailSender emailSender;
+    private final TokenRepository tokenRepository;
     private User user;
 
-    public AuthenticationResponse register(RegistrationRequest request) {
-        user = User.builder()
-                .email(request.getEmail())
-                .username(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(UserRole.EXAM_ATTENDEE)
-                .enabled(false)
-                .locked(false)
-                .build();
+    //    public AuthenticationResponse register(RegistrationRequest request) {
+//        user = User.builder()
+//                .email(request.getEmail())
+//                .username(request.getEmail())
+//                .password(passwordEncoder.encode(request.getPassword()))
+//                .role(UserRole.EXAM_ATTENDEE)
+//                .enabled(false)
+//                .locked(false)
+//                .build();
+//
+//        userRepository.save(user);
+//        // TODO: Send confirmation token
+//        String token = UUID.randomUUID().toString();
+//
+//        ConfirmationToken confirmationToken = new ConfirmationToken(
+//                token,
+//                LocalDateTime.now(),
+//                LocalDateTime.now().plusMinutes(15),
+//                user
+//        );
+//        confirmationTokenService.saveConfirmationToken(confirmationToken);
+//
+//        // TODO: Send email
+//        String link = "http://localhost:8080/api/v1/auth/confirm?token=" + token;
+//        emailSender.send(
+//                request.getEmail(),
+//                buildEmail(request.getEmail(), link)
+//        );
+//
+//
+//        var jwtToken = jwtService.generateToken(user);
+//
+//        return AuthenticationResponse.builder()
+//                .token(jwtToken)
+//                .build();
+//
+//
+//    }
+    public RegisterResponse register(@ModelAttribute RegistrationRequest request, boolean preVerified) {
 
-        userRepository.save(user);
-        // TODO: Send confirmation token
-        String token = UUID.randomUUID().toString();
+        var response = new RegisterResponse();
 
-        ConfirmationToken confirmationToken = new ConfirmationToken(
-                token,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusMinutes(15),
-                user
-        );
-        confirmationTokenService.saveConfirmationToken(confirmationToken);
+        if (userService.findByEmail(request.getEmail()).isPresent()) {
+            response.addError("email", "Email is already taken");
+        }
 
-        // TODO: Send email
-        String link = "http://localhost:8080/api/v1/auth/confirm?token=" + token;
-        emailSender.send(
-                request.getEmail(),
-                buildEmail(request.getEmail(), link)
-        );
+        if (response.checkValidity(request)) {
+            user = User.builder()
+                    .email(request.getEmail())
+                    .username(request.getEmail())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .role(UserRole.EXAM_ATTENDEE)
+                    .enabled(false)
+                    .locked(false)
+                    .verified(preVerified)
+                    .build();
 
+            userRepository.save(user);
 
-        var jwtToken = jwtService.generateToken(user);
+            // TODO: Send confirmation token
+            String token = UUID.randomUUID().toString();
 
-        return AuthenticationResponse.builder()
-                .token(jwtToken)
-                .build();
+            ConfirmationToken confirmationToken = new ConfirmationToken(
+                    token,
+                    LocalDateTime.now(),
+                    LocalDateTime.now().plusMinutes(15),
+                    user
+            );
+            confirmationTokenService.saveConfirmationToken(confirmationToken);
 
+            // TODO: Send email
+            String link = "http://localhost:8080/api/v1/auth/confirm?token=" + token;
+            emailSender.send(
+                    request.getEmail(),
+                    buildEmail(request.getEmail(), link)
+            );
 
+            //TODO: save jwt token
+            var jwtToken = jwtService.generateToken(user);
+            var refreshToken = jwtService.generateRefreshToken(user);
+            saveUserToken(user, jwtToken);
+
+            //TODO: set response
+            response.setLoggedUser(user);
+            response.setRole(user.getRole());
+            response.setAccessToken(jwtToken);
+            response.setRefreshToken(refreshToken);
+            response.setSuccess(true);
+        } else {
+            response.setSuccess(false);
+            response.setErrorMessage(
+                    "Something went wrong please try again");
+        }
+
+        return response;
+
+    }
+
+    private void saveUserToken(User user, String jwtToken) {
+        var token = Token.builder().user(user).token(jwtToken)
+                .tokenType(TokenType.BEARER).revoked(false)
+                .expired(false).build();
+        tokenRepository.save(token);
     }
 
     @Transactional
@@ -93,7 +164,6 @@ public class AuthenticationService {
         );
         return "confirmed";
     }
-
 
 
     private String buildEmail(String name, String link) {
@@ -165,28 +235,70 @@ public class AuthenticationService {
                 "</div></div>";
     }
 
+//    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+//        authenticationManager.authenticate(
+//                new UsernamePasswordAuthenticationToken(
+//                        request.getEmail(),
+//                        request.getPassword()
+//                )
+//        );
+//
+//        var user = userRepository.findByEmail(request.getEmail())
+//                .orElseThrow();
+//
+//        // Check if the user is enabled
+//        if (!user.isEnabled()) {
+//            throw new IllegalStateException("User is not enabled");
+//        }
+//
+//
+//        var jwtToken = jwtService.generateToken(user);
+//
+//        return AuthenticationResponse.builder()
+//                .token(jwtToken)
+//                .build();
+//
+//    }
+
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
 
-        var user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow();
+        var response = new AuthenticationResponse();
+        var user = userService.findByEmail(request.getEmail()).orElse(null);
 
-        // Check if the user is enabled
-        if (!user.isEnabled()) {
-            throw new IllegalStateException("User is not enabled");
+        if (user == null) {
+            response.addError("email", "Email does not exist");
+        } else if (!user.isEnabled()) {
+            response.addError("email", "Email is not verified");
+        } else if (!user.isVerified()) {
+            response.addError("email",
+                    "your account has not been approved by an admin yet.");
+        } else if (!passwordEncoder.matches(request.getPassword(),
+                user.getPassword())) {
+            response.addError("password", "Password is incorrect");
+        } else {
+            try {
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                request.getEmail(),
+                                request.getPassword()
+                        )
+                );
+                var jwtToken = jwtService.generateToken(user);
+                var refreshToken = jwtService.generateRefreshToken(user);
+                saveUserToken(user, jwtToken);
+                response.setSuccess(true);
+                response.setAccessToken(jwtToken);
+                response.setRefreshToken(refreshToken);
+                response.setId(user.getId());
+                response.setEmail(user.getEmail());
+                response.setRole(user.getRole());
+            } catch (Exception e) {
+                response.setSuccess(false);
+                response.addError("auth", "Authentication failed");
+            }
         }
 
-
-        var jwtToken = jwtService.generateToken(user);
-
-        return AuthenticationResponse.builder()
-                .token(jwtToken)
-                .build();
-
+        return response;
     }
+
 }

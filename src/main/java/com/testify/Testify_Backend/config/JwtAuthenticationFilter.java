@@ -1,7 +1,6 @@
 package com.testify.Testify_Backend.config;
 
 import com.testify.Testify_Backend.service.JwtService;
-import com.testify.Testify_Backend.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
