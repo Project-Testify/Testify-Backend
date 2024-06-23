@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "confirmation_tokens")
+@Table(name = "confirmationToken")
 public class ConfirmationToken {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "confirmation_token_seq")

@@ -1,8 +1,8 @@
-package com.testify.Testify_Backend.dto.responses.auth;
+package com.testify.Testify_Backend.responses.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.testify.Testify_Backend.dto.requests.auth.RegistrationRequest;
-import com.testify.Testify_Backend.dto.responses.ValidatedResponse;
+import com.testify.Testify_Backend.requests.auth.RegistrationRequest;
+import com.testify.Testify_Backend.responses.ValidatedResponse;
 import com.testify.Testify_Backend.enums.UserRole;
 import com.testify.Testify_Backend.model.User;
 import lombok.*;
