@@ -1,4 +1,4 @@
-package com.testify.Testify_Backend.dto.responses;
+package com.testify.Testify_Backend.responses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

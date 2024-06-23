@@ -1,9 +1,11 @@
 package com.testify.Testify_Backend.service;
 
-import com.testify.Testify_Backend.dto.requests.auth.AuthenticationRequest;
-import com.testify.Testify_Backend.dto.responses.auth.AuthenticationResponse;
-import com.testify.Testify_Backend.dto.requests.auth.RegistrationRequest;
-import com.testify.Testify_Backend.dto.responses.auth.RegisterResponse;
+import com.testify.Testify_Backend.model.Attendee;
+import com.testify.Testify_Backend.repository.AttendeeRepository;
+import com.testify.Testify_Backend.requests.auth.AuthenticationRequest;
+import com.testify.Testify_Backend.responses.auth.AuthenticationResponse;
+import com.testify.Testify_Backend.requests.auth.RegistrationRequest;
+import com.testify.Testify_Backend.responses.auth.RegisterResponse;
 import com.testify.Testify_Backend.enums.TokenType;
 import com.testify.Testify_Backend.enums.UserRole;
 import com.testify.Testify_Backend.model.ConfirmationToken;
@@ -34,6 +36,7 @@ public class AuthenticationService {
     private final UserService userService;
     private final EmailSender emailSender;
     private final TokenRepository tokenRepository;
+    private final AttendeeRepository attendeeRepository;
     private User user;
 
     //    public AuthenticationResponse register(RegistrationRequest request) {
@@ -83,26 +86,34 @@ public class AuthenticationService {
         }
 
         if (response.checkValidity(request)) {
-            user = User.builder()
-                    .email(request.getEmail())
-                    .username(request.getEmail())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .role(UserRole.EXAM_ATTENDEE)
-                    .enabled(false)
-                    .locked(false)
-                    .verified(preVerified)
-                    .build();
+//
+            User savedUser = null;
+            if (request.getRole().equals(UserRole.ATTENDEE)) {
+                Attendee attendee = Attendee.builder()
+                        .email(request.getEmail())
+                        .username(request.getEmail())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .firstName(request.getFirstName())
+                        .lastName(request.getLastName())
+                        .bio(request.getBio())
+                        .contactNo(request.getContactNo())
+                        .role(UserRole.ATTENDEE)
+                        .enabled(false)
+                        .locked(false)
+                        .verified(true)
+                        .build();
+                savedUser = attendeeRepository.save(attendee);
+            }
 
-            userRepository.save(user);
 
-            // TODO: Send confirmation token
+            //TODO: Send confirmation token
             String token = UUID.randomUUID().toString();
 
             ConfirmationToken confirmationToken = new ConfirmationToken(
                     token,
                     LocalDateTime.now(),
                     LocalDateTime.now().plusMinutes(15),
-                    user
+                    savedUser
             );
             confirmationTokenService.saveConfirmationToken(confirmationToken);
 
@@ -114,13 +125,13 @@ public class AuthenticationService {
             );
 
             //TODO: save jwt token
-            var jwtToken = jwtService.generateToken(user);
-            var refreshToken = jwtService.generateRefreshToken(user);
-            saveUserToken(user, jwtToken);
+            var jwtToken = jwtService.generateToken(savedUser);
+            var refreshToken = jwtService.generateRefreshToken(savedUser);
+            saveUserToken(savedUser, jwtToken);
 
             //TODO: set response
-            response.setLoggedUser(user);
-            response.setRole(user.getRole());
+            response.setLoggedUser(savedUser);
+            response.setRole(savedUser.getRole());
             response.setAccessToken(jwtToken);
             response.setRefreshToken(refreshToken);
             response.setSuccess(true);

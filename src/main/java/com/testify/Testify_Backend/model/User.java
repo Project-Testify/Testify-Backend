@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.testify.Testify_Backend.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,12 +15,12 @@ import java.util.List;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@SuperBuilder
 @EqualsAndHashCode
 @Getter
 @Setter
 @Inheritance(strategy = InheritanceType.JOINED)
-@Table(name = "users")
+@Table(name = "_user")
 public class User implements UserDetails {
 
 
@@ -37,6 +38,11 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password; // Store hashed password
 
+    @Column(nullable = false)
+    private String contactNo;
+
+    private String profileImage;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
@@ -46,6 +52,7 @@ public class User implements UserDetails {
     private boolean verified = false;
 
     private Boolean locked=false;
+
     //email verification
     private Boolean enabled=false;
 

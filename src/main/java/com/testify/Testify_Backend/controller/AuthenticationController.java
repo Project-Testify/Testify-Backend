@@ -1,9 +1,9 @@
 package com.testify.Testify_Backend.controller;
 
-import com.testify.Testify_Backend.dto.requests.auth.AuthenticationRequest;
-import com.testify.Testify_Backend.dto.responses.auth.AuthenticationResponse;
-import com.testify.Testify_Backend.dto.requests.auth.RegistrationRequest;
-import com.testify.Testify_Backend.dto.responses.auth.RegisterResponse;
+import com.testify.Testify_Backend.requests.auth.AuthenticationRequest;
+import com.testify.Testify_Backend.responses.auth.AuthenticationResponse;
+import com.testify.Testify_Backend.requests.auth.RegistrationRequest;
+import com.testify.Testify_Backend.responses.auth.RegisterResponse;
 import com.testify.Testify_Backend.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
