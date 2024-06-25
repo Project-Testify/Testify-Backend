@@ -1,18 +1,13 @@
 package com.testify.Testify_Backend.service;
 
-import com.testify.Testify_Backend.model.Attendee;
-import com.testify.Testify_Backend.repository.AttendeeRepository;
+import com.testify.Testify_Backend.model.*;
+import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.auth.AuthenticationRequest;
 import com.testify.Testify_Backend.responses.auth.AuthenticationResponse;
 import com.testify.Testify_Backend.requests.auth.RegistrationRequest;
 import com.testify.Testify_Backend.responses.auth.RegisterResponse;
 import com.testify.Testify_Backend.enums.TokenType;
 import com.testify.Testify_Backend.enums.UserRole;
-import com.testify.Testify_Backend.model.ConfirmationToken;
-import com.testify.Testify_Backend.model.Token;
-import com.testify.Testify_Backend.model.User;
-import com.testify.Testify_Backend.repository.TokenRepository;
-import com.testify.Testify_Backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,6 +32,8 @@ public class AuthenticationService {
     private final EmailSender emailSender;
     private final TokenRepository tokenRepository;
     private final AttendeeRepository attendeeRepository;
+    private final ExamSetterRepository examSetterRepository;
+    private final OrganizationRepository organizationRepository;
     private User user;
 
     //    public AuthenticationResponse register(RegistrationRequest request) {
@@ -103,6 +100,55 @@ public class AuthenticationService {
                         .verified(true)
                         .build();
                 savedUser = attendeeRepository.save(attendee);
+            }else if(request.getRole().equals(UserRole.EXAMSETTER)){
+                ExamSetter examSetter = ExamSetter.builder()
+                        .email(request.getEmail())
+                        .username(request.getEmail())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .firstName(request.getFirstName())
+                        .lastName(request.getLastName())
+                        .bio(request.getBio())
+                        .contactNo(request.getContactNo())
+                        .role(UserRole.EXAMSETTER)
+                        .enabled(false)
+                        .locked(false)
+                        .verified(true)
+                        .build();
+                savedUser = examSetterRepository.save(examSetter);
+            } else if (request.getRole().equals(UserRole.ORGANIZATION)) {
+                Organization organization = Organization.builder()
+                        .email(request.getEmail())
+                        .username(request.getEmail())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .firstName(request.getFirstName())
+                        .bio(request.getBio())
+                        .contactNo(request.getContactNo())
+                        .addressLine1(request.getAddressLine1())
+                        .addressLine2(request.getAddressLine2())
+                        .city(request.getCity())
+                        .state(request.getState())
+                        .website(request.getWebsite())
+                        .role(UserRole.ORGANIZATION)
+                        .enabled(false)
+                        .locked(false)
+                        .verified(false)
+                        .build();
+                savedUser = organizationRepository.save(organization);
+                
+            }else if(request.getRole().equals(UserRole.ADMIN)){
+                Admin admin = Admin.builder()
+                        .email(request.getEmail())
+                        .username(request.getEmail())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .firstName(request.getFirstName())
+                        .lastName(request.getLastName())
+                        .contactNo(request.getContactNo())
+                        .role(UserRole.ADMIN)
+                        .enabled(false)
+                        .locked(false)
+                        .verified(true)
+                        .build();
+                savedUser = userRepository.save(admin);
             }
 
 
