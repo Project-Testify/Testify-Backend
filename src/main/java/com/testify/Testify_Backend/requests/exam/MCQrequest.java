@@ -1,15 +1,17 @@
-package com.testify.Testify_Backend.requests.auth;
+package com.testify.Testify_Backend.requests.exam;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
+import java.util.Set;
+
 @Setter
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class OptionRequest {
-    private String optionText;
-    private boolean isCorrect;
+public class MCQrequest {
+    private Set<OptionRequest> options;
+
 }

@@ -1,7 +1,8 @@
 package com.testify.Testify_Backend.controller;
 
-import com.testify.Testify_Backend.requests.auth.ExamRequest;
-import com.testify.Testify_Backend.requests.auth.QuestionRequest;
+import com.testify.Testify_Backend.model.Exam;
+import com.testify.Testify_Backend.requests.exam.ExamRequest;
+import com.testify.Testify_Backend.requests.exam.QuestionRequest;
 import com.testify.Testify_Backend.service.ExamCreationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -24,5 +25,10 @@ public class ExamController {
     public String addQuestionsToExam(@PathVariable long examId, @RequestBody Set<QuestionRequest> questionRequests){
         examService.addQuestionsToExam(examId, questionRequests);
         return "Questions Added Successfully";
+    }
+
+    @GetMapping("/{examId}")
+    public Exam getExam(@PathVariable long examId){
+        return examService.getExam(examId);
     }
 }

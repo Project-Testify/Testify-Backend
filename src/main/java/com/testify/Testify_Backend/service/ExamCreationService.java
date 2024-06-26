@@ -7,9 +7,9 @@ import com.testify.Testify_Backend.model.Question;
 import com.testify.Testify_Backend.repository.ExamRepository;
 import com.testify.Testify_Backend.repository.ExamSetterRepository;
 import com.testify.Testify_Backend.repository.OrganizationRepository;
-import com.testify.Testify_Backend.requests.auth.ExamRequest;
-import com.testify.Testify_Backend.requests.auth.OptionRequest;
-import com.testify.Testify_Backend.requests.auth.QuestionRequest;
+import com.testify.Testify_Backend.requests.exam.ExamRequest;
+import com.testify.Testify_Backend.requests.exam.OptionRequest;
+import com.testify.Testify_Backend.requests.exam.QuestionRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +24,7 @@ public class ExamCreationService {
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
 
+    //Create Exam
     public void createExam(ExamRequest examRequest){
 
         Exam exam = new Exam();
@@ -43,29 +44,43 @@ public class ExamCreationService {
         Optional<Exam> optionalExam = examRepository.findById(exam_id);
         Exam exam = optionalExam.get();
 
-        exam.setQuestions(questionRequests.stream().map(this::mapQuestionRequestToQuestion).collect(Collectors.toSet()));
+        Set<Question> questions = questionRequests.stream()
+                .map(questionRequest -> mapQuestionRequestToQuestion(questionRequest,exam))
+                        .collect(Collectors.toSet());
+        exam.setQuestions(questions);
+        //exam.setQuestions(questionRequests.stream().map(this::mapQuestionRequestToQuestion).collect(Collectors.toSet()));
         examRepository.save(exam);
 
     }
 
-    private Question mapQuestionRequestToQuestion(QuestionRequest questionRequest){
+    private Question mapQuestionRequestToQuestion(QuestionRequest questionRequest,Exam exam){
         if("MCQ".equals(questionRequest.getQuestionType())){
             MCQ mcq = new MCQ();
             mcq.setQuestion(questionRequest.getQuestion());
-            mcq.setExam(examRepository.findById(questionRequest.getExamId()).get());
-            mcq.setOptions(questionRequest.getOptionRequests().stream().map(this::mapToMCQoption).collect(Collectors.toSet()));
+            mcq.setExam(examRepository.findById(exam.getId()).get());
+
+            Set<MCQOption> options = questionRequest.getOptionRequests().stream()
+                    .map(optionRequest -> mapToMCQoption(optionRequest, mcq))
+                    .collect(Collectors.toSet());
+            mcq.setOptions(options);
 
             return mcq;
         }
         else return null;
     }
 
-    private MCQOption mapToMCQoption(OptionRequest optionRequest) {
+    private MCQOption mapToMCQoption(OptionRequest optionRequest, MCQ mcq) {
         MCQOption mcqOption = new MCQOption();
         mcqOption.setOptionText(optionRequest.getOptionText());
         mcqOption.setCorrect(optionRequest.isCorrect());
+        mcqOption.setMcqQuestion(mcq);
 
         return mcqOption;
+    }
+
+    //Get exam
+    public Exam getExam(long examId){
+        return examRepository.findById(examId).get();
     }
 
 }

@@ -1,4 +1,4 @@
-package com.testify.Testify_Backend.requests.auth;
+package com.testify.Testify_Backend.requests.exam;
 
 
 import lombok.*;
