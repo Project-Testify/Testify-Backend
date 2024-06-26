@@ -33,7 +33,7 @@ public class AuthenticationController {
         return ResponseEntity.badRequest().body(response);
     }
 
-    @PostMapping("/authenticate")
+    @PostMapping("/authenticate") //login honde
     public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request){
         return ResponseEntity.ok(authService.authenticate(request));
     }
