@@ -13,6 +13,7 @@ import java.util.Set;
 @Getter
 @Setter
 @AllArgsConstructor
+@SuperBuilder
 @NoArgsConstructor
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "question_type", discriminatorType = DiscriminatorType.STRING)
