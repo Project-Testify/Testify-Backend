@@ -21,7 +21,7 @@ import java.util.List;
 @Setter
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "_user")
-public class User implements UserDetails {
+public abstract class User implements UserDetails {
 
 
     @Id

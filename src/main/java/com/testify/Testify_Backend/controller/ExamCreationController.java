@@ -3,7 +3,7 @@ package com.testify.Testify_Backend.controller;
 import com.testify.Testify_Backend.model.Exam;
 import com.testify.Testify_Backend.requests.exam.ExamRequest;
 import com.testify.Testify_Backend.requests.exam.QuestionRequest;
-import com.testify.Testify_Backend.service.ExamCreationService;
+import com.testify.Testify_Backend.service.ExamCreationServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,8 +12,8 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/v1/exam")
 @RequiredArgsConstructor
-public class ExamController {
-    private final ExamCreationService examService;
+public class ExamCreationController {
+    private final ExamCreationServiceImpl examService;
 
     @PostMapping("/create")
     public String createExam(@RequestBody ExamRequest examRequest){
