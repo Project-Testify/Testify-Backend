@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @Table(name = "attendee")
 @PrimaryKeyJoinColumn(name = "id")
-public class Attendee extends User{
+public class Candidate extends User{
     @Column(nullable = false)
     private String firstName;
     private String lastName;
