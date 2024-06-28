@@ -15,4 +15,5 @@ public class QuestionRequest {
     private String question;
     private String questionType;
     private Set<OptionRequest> optionRequests; //only for MCQ type questions otherwise null
+    private Set<String> keywords; //only for Essay type questions otherwise null
 }

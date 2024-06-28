@@ -1,9 +1,6 @@
 package com.testify.Testify_Backend.service;
 
-import com.testify.Testify_Backend.model.Exam;
-import com.testify.Testify_Backend.model.MCQ;
-import com.testify.Testify_Backend.model.MCQOption;
-import com.testify.Testify_Backend.model.Question;
+import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.ExamRepository;
 import com.testify.Testify_Backend.repository.ExamSetterRepository;
 import com.testify.Testify_Backend.repository.OrganizationRepository;
@@ -65,8 +62,15 @@ public class ExamCreationService {
             mcq.setOptions(options);
 
             return mcq;
-        }
-        else return null;
+        } else if ("ESSAY".equals(questionRequest.getQuestionType())){
+            Essay essay = new Essay();
+            essay.setQuestion(questionRequest.getQuestion());
+            essay.setKeywords(questionRequest.getKeywords());
+            essay.setExam(examRepository.findById(exam.getId()).get());
+
+            return essay;
+
+        } else return null;
     }
 
     private MCQOption mapToMCQoption(OptionRequest optionRequest, MCQ mcq) {
