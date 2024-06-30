@@ -1,7 +1,9 @@
-package com.testify.Testify_Backend.requests.exam;
+package com.testify.Testify_Backend.requests.exam_management;
 
 
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,4 +19,8 @@ public class ExamRequest {
     private int passMarks;
     private long examSetterId;
     private long organizationId;
+
+    private LocalDateTime startDatetime;
+    private LocalDateTime endDatetime;
+    private boolean isPrivate;
 }

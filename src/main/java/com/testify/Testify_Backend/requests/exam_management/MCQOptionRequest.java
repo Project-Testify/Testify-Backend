@@ -1,4 +1,5 @@
-package com.testify.Testify_Backend.requests.exam;
+package com.testify.Testify_Backend.requests.exam_management;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,7 +10,9 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class OptionRequest {
+public class MCQOptionRequest {
     private String optionText;
     private boolean isCorrect;
+    private double marks;
 }
+

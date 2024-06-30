@@ -1,14 +1,13 @@
 package com.testify.Testify_Backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+
+import java.util.Set;
 
 @Entity
 @EqualsAndHashCode(callSuper = true)
@@ -23,5 +22,8 @@ public class Candidate extends User{
     private String firstName;
     private String lastName;
     private String bio;
+
+    @ManyToMany(mappedBy = "candidates")
+    private Set<Exam> exams;
 
 }
