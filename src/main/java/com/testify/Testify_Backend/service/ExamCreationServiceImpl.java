@@ -80,7 +80,7 @@ public class ExamCreationServiceImpl implements ExamCreationService{
         return mcqOption;
     }
 
-    //Get exam
+    //TODO::Get Exam
     public Exam getExam(long examId){
         return examRepository.findById(examId).get();
     }

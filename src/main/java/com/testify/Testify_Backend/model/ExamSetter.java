@@ -1,13 +1,11 @@
 package com.testify.Testify_Backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
+
+import java.util.Set;
 
 @Entity
 @SuperBuilder
@@ -21,4 +19,10 @@ public class ExamSetter extends User{
     private String firstName;
     private String lastName;
     private String bio;
+
+    @ManyToMany(mappedBy = "examSetters", cascade = CascadeType.ALL)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<Organization> organizations;
 }
