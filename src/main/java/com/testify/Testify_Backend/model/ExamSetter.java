@@ -3,6 +3,10 @@ package com.testify.Testify_Backend.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.util.Set;
@@ -25,4 +29,9 @@ public class ExamSetter extends User{
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<Organization> organizations;
+    @ManyToMany(mappedBy = "proctors")
+    private Set<Exam> proctoredExams;
+
+    @OneToMany(mappedBy = "moderator")
+    private Set<Exam> moderatedExams;
 }

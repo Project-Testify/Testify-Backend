@@ -5,11 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
 @Setter
 @AllArgsConstructor
+@SuperBuilder
 @NoArgsConstructor
 public class MCQOption {
     @Id
@@ -24,4 +26,7 @@ public class MCQOption {
     private MCQ mcqQuestion;
 
     private boolean isCorrect;
+
+    @Column(nullable = false)
+    private double marks = 0;
 }

@@ -7,25 +7,24 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.util.Set;
-
 @Entity
 @Getter
 @Setter
 @AllArgsConstructor
-@SuperBuilder
 @NoArgsConstructor
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "question_type", discriminatorType = DiscriminatorType.STRING)
-public abstract class Question {
+@SuperBuilder
+public class EssayCoverPoint {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
     @Column(nullable = false)
-    private String questionText;
+    private String coverPointText;
 
     @ManyToOne
-    @JoinColumn(name = "exam_id", nullable = false)
-    private Exam exam;
+    @JoinColumn(name = "essay_question_id", nullable = false)
+    private Essay essayQuestion;
+
+    @Column(nullable = false)
+    private double marks = 0;
 }
