@@ -13,6 +13,7 @@ import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.Set;
@@ -127,5 +128,33 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         return response;
 
 
+    }
+
+    @Override
+    @Transactional
+    public GenericAddOrUpdateResponse<QuestionSequenceRequest> updateQuestionSequence(long examId, QuestionSequenceRequest questionSequenceRequest) {
+        GenericAddOrUpdateResponse<QuestionSequenceRequest> response = new GenericAddOrUpdateResponse<>();
+        try {
+            Exam exam = examRepository.findById(examId)
+                    .orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
+            exam.setQuestionSequence(questionSequenceRequest.getQuestionIds());
+            examRepository.save(exam);
+
+            response.setSuccess(true);
+            response.setMessage("Question sequence updated successfully");
+            response.setId(examId);
+        } catch (IllegalArgumentException e) {
+            response.setSuccess(false);
+            response.setMessage("Error updating question sequence: " + e.getMessage());
+            response.setId(examId);
+            log.error("Error updating question sequence for examId {}: {}", examId, e.getMessage());
+        } catch (Exception e) {
+            response.setSuccess(false);
+            response.setMessage("Unexpected error updating question sequence");
+            response.setId(examId);
+            log.error("Unexpected error updating question sequence for examId {}: {}", examId, e.getMessage(), e);
+        }
+
+        return response;
     }
 }

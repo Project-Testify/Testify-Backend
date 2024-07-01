@@ -1,5 +1,5 @@
 package com.testify.Testify_Backend.model;
-
+import com.testify.Testify_Backend.converter.QuestionSequenceConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,7 +7,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 @Entity
 @Getter
@@ -15,6 +17,7 @@ import java.util.Set;
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
+
 public class Exam {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,5 +69,8 @@ public class Exam {
 
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
     private Set<Question> questions;
+
+    @Convert(converter = QuestionSequenceConverter.class)
+    private List<Long> questionSequence;
 
 }
