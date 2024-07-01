@@ -29,6 +29,7 @@ public class ExamSetter extends User{
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<Organization> organizations;
+
     @ManyToMany(mappedBy = "proctors")
     private Set<Exam> proctoredExams;
 
