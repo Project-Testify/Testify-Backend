@@ -1,13 +1,11 @@
 package com.testify.Testify_Backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
+
+import java.util.Set;
 
 @Entity
 @SuperBuilder
@@ -28,4 +26,14 @@ public class Organization extends User{
     private String bio;
     private String website;
     private String coverImage;
+
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "organization_exam_setter",
+            joinColumns = @JoinColumn(name = "organization_id"),
+            inverseJoinColumns = @JoinColumn(name = "exam_setter_id"))
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<ExamSetter> examSetters;
 }
