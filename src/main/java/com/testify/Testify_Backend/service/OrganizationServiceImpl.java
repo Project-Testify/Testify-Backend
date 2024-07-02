@@ -2,13 +2,20 @@ package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.ExamSetter;
 import com.testify.Testify_Backend.model.Organization;
+import com.testify.Testify_Backend.model.VerificationRequest;
 import com.testify.Testify_Backend.repository.ExamSetterRepository;
 import com.testify.Testify_Backend.repository.OrganizationRepository;
+import com.testify.Testify_Backend.repository.VerificationRequestRepository;
+import com.testify.Testify_Backend.requests.VerificationRequestRequest;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
+import com.testify.Testify_Backend.utils.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.Date;
 import java.util.Set;
 
 @Service
@@ -16,6 +23,7 @@ import java.util.Set;
 public class OrganizationServiceImpl implements OrganizationService{
     private final OrganizationRepository organizationRepository;
     private final ExamSetterRepository examSetterRepository;
+    private final VerificationRequestRepository verificationRequestRepository;
 
     public GenericAddOrUpdateResponse addSetterToOrganization(long organizationId, Set<Long> setterId) {
         Organization organization = organizationRepository.findById(organizationId).get();
@@ -63,5 +71,27 @@ public class OrganizationServiceImpl implements OrganizationService{
         Set<ExamSetter> examSetters = organization.getExamSetters();
 
         return examSetters;
+    }
+
+    public GenericAddOrUpdateResponse<VerificationRequestRequest> requestVerification(VerificationRequestRequest verificationRequest) throws IOException {
+        GenericAddOrUpdateResponse<VerificationRequestRequest> response = new GenericAddOrUpdateResponse<>();
+        MultipartFile document = verificationRequest.getVerificationDocument();
+
+        String documentUrl = FileUploadUtil.saveFile(document, "verificationDocument");
+
+        VerificationRequest verification = VerificationRequest.builder()
+                .verificationDocumentUrl(documentUrl)
+                //TODO: add proper verification status
+                .verificationStatus("PENDING")
+                //Todo: get organization id from logged in user
+                .organizationId(1)
+                .requestDate(new Date())
+                .build();
+
+        verificationRequestRepository.save(verification);
+
+        response.setSuccess(true);
+        response.setMessage("Verification request sent successfully");
+        return response;
     }
 }

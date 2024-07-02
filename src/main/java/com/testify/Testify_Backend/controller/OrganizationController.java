@@ -1,12 +1,14 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.model.ExamSetter;
+import com.testify.Testify_Backend.requests.VerificationRequestRequest;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
 import com.testify.Testify_Backend.service.OrganizationServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Set;
 
 @RestController
@@ -29,5 +31,10 @@ public class OrganizationController {
     @GetMapping("/{organizationId}/getSetter")
     public Set<ExamSetter> getSetterFromOrganization(@PathVariable long organizationId){
         return organizationService.getSetterFromOrganization(organizationId);
+    }
+
+    @PostMapping("/requestVerification")
+    public GenericAddOrUpdateResponse<VerificationRequestRequest> requestVerification(@ModelAttribute VerificationRequestRequest verificationRequest) throws IOException {
+        return organizationService.requestVerification(verificationRequest);
     }
 }
