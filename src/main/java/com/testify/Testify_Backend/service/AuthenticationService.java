@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import static com.testify.Testify_Backend.util.UserUtil.getCurrentUserId;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,44 +40,7 @@ public class AuthenticationService {
     private final OrganizationRepository organizationRepository;
     private User user;
 
-    //    public AuthenticationResponse register(RegistrationRequest request) {
-//        user = User.builder()
-//                .email(request.getEmail())
-//                .username(request.getEmail())
-//                .password(passwordEncoder.encode(request.getPassword()))
-//                .role(UserRole.EXAM_ATTENDEE)
-//                .enabled(false)
-//                .locked(false)
-//                .build();
-//
-//        userRepository.save(user);
-//        // TODO: Send confirmation token
-//        String token = UUID.randomUUID().toString();
-//
-//        ConfirmationToken confirmationToken = new ConfirmationToken(
-//                token,
-//                LocalDateTime.now(),
-//                LocalDateTime.now().plusMinutes(15),
-//                user
-//        );
-//        confirmationTokenService.saveConfirmationToken(confirmationToken);
-//
-//        // TODO: Send email
-//        String link = "http://localhost:8080/api/v1/auth/confirm?token=" + token;
-//        emailSender.send(
-//                request.getEmail(),
-//                buildEmail(request.getEmail(), link)
-//        );
-//
-//
-//        var jwtToken = jwtService.generateToken(user);
-//
-//        return AuthenticationResponse.builder()
-//                .token(jwtToken)
-//                .build();
-//
-//
-//    }
+
     public RegisterResponse register(@ModelAttribute RegistrationRequest request, boolean preVerified) {
 
         var response = new RegisterResponse();
@@ -170,10 +136,10 @@ public class AuthenticationService {
             // Log the confirmation link
             log.info("Confirmation link: {}", link);
 
-//            emailSender.send(
-//                    request.getEmail(),
-//                    buildEmail(request.getEmail(), link)
-//            );
+            emailSender.send(
+                    request.getEmail(),
+                    buildEmail(request.getEmail(), link)
+            );
 
             //TODO: save jwt token
             var jwtToken = jwtService.generateToken(savedUser);
@@ -198,7 +164,8 @@ public class AuthenticationService {
 
     private void saveUserToken(User user, String jwtToken) {
         var token = Token.builder().user(user).token(jwtToken)
-                .tokenType(TokenType.BEARER).revoked(false)
+                .tokenType(TokenType.BEARER)
+                .revoked(false)
                 .expired(false).build();
         tokenRepository.save(token);
     }
@@ -237,31 +204,6 @@ public class AuthenticationService {
     }
 
 
-//    public AuthenticationResponse authenticate(AuthenticationRequest request) {
-//        authenticationManager.authenticate(
-//                new UsernamePasswordAuthenticationToken(
-//                        request.getEmail(),
-//                        request.getPassword()
-//                )
-//        );
-//
-//        var user = userRepository.findByEmail(request.getEmail())
-//                .orElseThrow();
-//
-//        // Check if the user is enabled
-//        if (!user.isEnabled()) {
-//            throw new IllegalStateException("User is not enabled");
-//        }
-//
-//
-//        var jwtToken = jwtService.generateToken(user);
-//
-//        return AuthenticationResponse.builder()
-//                .token(jwtToken)
-//                .build();
-//
-//    }
-
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
 
         var response = new AuthenticationResponse();
@@ -285,6 +227,7 @@ public class AuthenticationService {
                                 request.getPassword()
                         )
                 );
+                revokeAllUserTokens(user);
                 var jwtToken = jwtService.generateToken(user);
                 var refreshToken = jwtService.generateRefreshToken(user);
                 saveUserToken(user, jwtToken);
@@ -301,6 +244,18 @@ public class AuthenticationService {
         }
 
         return response;
+    }
+
+    private void revokeAllUserTokens(User user) {
+        var validUserTokens = tokenRepository.findAllValidTokenByUser(
+                user.getId());
+        if (validUserTokens.isEmpty())
+            return;
+        validUserTokens.forEach(token -> {
+            token.setExpired(true);
+            token.setRevoked(true);
+        });
+        tokenRepository.saveAll(validUserTokens);
     }
 
 }

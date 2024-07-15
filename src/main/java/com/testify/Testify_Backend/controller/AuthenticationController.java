@@ -9,17 +9,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static com.testify.Testify_Backend.util.UserUtil.getCurrentUserId;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthenticationController {
 
     private final AuthenticationService authService;
-
-//    @PostMapping("/register")
-//    public ResponseEntity<AuthenticationResponse> register(@RequestBody RegistrationRequest request){
-//        return ResponseEntity.ok(authService.register(request));
-//    }
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@RequestBody RegistrationRequest request){
@@ -39,7 +36,9 @@ public class AuthenticationController {
     }
 
     @GetMapping(path = "confirm")
-    public String confirm(@RequestParam("token") String token) {
+    public String verifyEmail(@RequestParam("token") String token) {
         return authService.confirmToken(token);
     }
+
+
 }
