@@ -30,6 +30,14 @@ public class ExamSetter extends User{
     @EqualsAndHashCode.Exclude
     private Set<Organization> organizations;
 
+    @ManyToMany
+    @JoinTable(
+            name = "course_module_exam_setter",
+            joinColumns = @JoinColumn(name = "exam_setter_id"),
+            inverseJoinColumns = @JoinColumn(name = "course_module_id")
+    )
+    private Set<CourseModule> courseModules;
+
     @ManyToMany(mappedBy = "proctors")
     private Set<Exam> proctoredExams;
 

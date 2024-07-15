@@ -36,4 +36,10 @@ public class Organization extends User{
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<ExamSetter> examSetters;
+
+    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<CourseModule> courseModules;
 }
