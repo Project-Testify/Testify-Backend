@@ -8,6 +8,7 @@ import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.service.ExamManagementService;
 import com.testify.Testify_Backend.service.ExamManagementServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,10 +17,9 @@ import org.springframework.web.bind.annotation.*;
 public class ExamManagementController {
     private final ExamManagementService examManagementService;
 
-    @PostMapping("/create")
-    public String createExam(@RequestBody ExamRequest examRequest){
-        examManagementService.createExam(examRequest);
-        return "Exam Created Successfully";
+    @PostMapping
+    public GenericAddOrUpdateResponse<ExamRequest> createExam(@RequestBody ExamRequest examRequest){
+        return examManagementService.createExam(examRequest);
     }
 
     @PostMapping("/{examId}/addQuestion")
@@ -30,6 +30,11 @@ public class ExamManagementController {
     @PutMapping("/{examId}/updateQuestionSequence")
     public GenericAddOrUpdateResponse<QuestionSequenceRequest> updateQuestionSequence(@PathVariable long examId, @RequestBody QuestionSequenceRequest questionSequenceRequest) {
         return examManagementService.updateQuestionSequence(examId, questionSequenceRequest);
+    }
+
+    @GetMapping("/{examId}")
+    public ResponseEntity<Exam> getExam(@PathVariable long examId){
+        return examManagementService.getExamResponse(examId);
     }
 
 

@@ -15,7 +15,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "attendee")
+@Table(name = "candidate")
 @PrimaryKeyJoinColumn(name = "id")
 public class Candidate extends User{
     @Column(nullable = false)

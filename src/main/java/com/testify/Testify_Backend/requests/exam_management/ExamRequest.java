@@ -17,7 +17,6 @@ public class ExamRequest {
     private int duration;
     private int totalMarks;
     private int passMarks;
-    private long examSetterId;
     private long organizationId;
 
     private LocalDateTime startDatetime;
