@@ -6,12 +6,14 @@ import com.testify.Testify_Backend.requests.VerificationRequestRequest;
 import com.testify.Testify_Backend.requests.organization_management.AddExamSetterRequest;
 import com.testify.Testify_Backend.requests.organization_management.CandidateGroupRequest;
 import com.testify.Testify_Backend.requests.organization_management.CourseModuleRequest;
+import com.testify.Testify_Backend.requests.organization_management.InviteExamSetterRequest;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
 import com.testify.Testify_Backend.responses.courseModule.CourseModuleResponse;
 import com.testify.Testify_Backend.utils.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.antlr.v4.runtime.misc.LogManager;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,10 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +38,8 @@ public class OrganizationServiceImpl implements OrganizationService{
     private final CandidateRepository candidateRepository;
     private final CandidateGroupRepository candidateGroupRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ExamSetterInvitationRepository examSetterInvitationRepository;
+    private final EmailSender emailSender;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -197,6 +198,51 @@ public class OrganizationServiceImpl implements OrganizationService{
         response.setMessage("Candidate group created successfully");
         response.setId(candidateGroup.getId());
         return response;
+    }
+
+    @Override
+    public ResponseEntity<GenericAddOrUpdateResponse> inviteExamSetter(long organizationId, InviteExamSetterRequest request) {
+        try {
+            Organization organization = organizationRepository.findById(organizationId)
+                    .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+
+            String token = UUID.randomUUID().toString();
+            String invitationLink = "https://auth/signup/candidate?token=" + token;
+
+            ExamSetterInvitation invitation = new ExamSetterInvitation();
+            invitation.setEmail(request.getEmail());
+            invitation.setOrganization(organization);
+            invitation.setInvitationLink(invitationLink);
+            invitation.setToken(token);
+            invitation.setAccepted(false);
+
+            examSetterInvitationRepository.save(invitation);
+
+            emailSender.send(
+                    request.getEmail(),
+                    buildEmail(invitationLink)
+            );
+
+            GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
+            response.setSuccess(true);
+            response.setMessage("Invitation sent successfully");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
+            response.setSuccess(false);
+            response.setMessage("An error occurred while sending the invitation");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    private String buildEmail(String invitationLink) {
+        return "You have been invited to join the organization. Click the link to register: " +
+                invitationLink;
     }
 
 

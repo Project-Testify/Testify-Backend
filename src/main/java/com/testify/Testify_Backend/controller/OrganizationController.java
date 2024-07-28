@@ -5,6 +5,7 @@ import com.testify.Testify_Backend.requests.VerificationRequestRequest;
 import com.testify.Testify_Backend.requests.organization_management.AddExamSetterRequest;
 import com.testify.Testify_Backend.requests.organization_management.CandidateGroupRequest;
 import com.testify.Testify_Backend.requests.organization_management.CourseModuleRequest;
+import com.testify.Testify_Backend.requests.organization_management.InviteExamSetterRequest;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
 import com.testify.Testify_Backend.responses.courseModule.CourseModuleResponse;
@@ -49,5 +50,11 @@ public class OrganizationController {
             @RequestBody CandidateGroupRequest candidateGroupRequest)
     {
         return organizationService.createCandidateGroup(organizationId, candidateGroupRequest);
+    }
+
+    @PostMapping("/{organizationId}/invite-exam-setter")
+    public ResponseEntity<GenericAddOrUpdateResponse> inviteExamSetter(
+            @PathVariable long organizationId, @RequestBody InviteExamSetterRequest request) {
+        return organizationService.inviteExamSetter(organizationId, request);
     }
 }
