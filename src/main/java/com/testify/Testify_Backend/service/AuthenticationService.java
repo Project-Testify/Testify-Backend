@@ -21,8 +21,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static com.testify.Testify_Backend.util.UserUtil.getCurrentUserId;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,7 +33,7 @@ public class AuthenticationService {
     private final UserService userService;
     private final EmailSender emailSender;
     private final TokenRepository tokenRepository;
-    private final AttendeeRepository attendeeRepository;
+    private final CandidateRepository attendeeRepository;
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
     private User user;
