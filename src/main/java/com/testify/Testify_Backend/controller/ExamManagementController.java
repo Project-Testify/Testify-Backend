@@ -1,6 +1,7 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.model.Exam;
+import com.testify.Testify_Backend.requests.exam_management.CandidateEmailListRequest;
 import com.testify.Testify_Backend.requests.exam_management.ExamRequest;
 import com.testify.Testify_Backend.requests.exam_management.QuestionRequest;
 import com.testify.Testify_Backend.requests.exam_management.QuestionSequenceRequest;
@@ -37,7 +38,12 @@ public class ExamManagementController {
         return examManagementService.getExamResponse(examId);
     }
 
-
+    @PostMapping("/{examId}/addCandidates")
+    public ResponseEntity<GenericAddOrUpdateResponse<CandidateEmailListRequest>> addCandidatesToExam(
+            @PathVariable long examId, @RequestBody CandidateEmailListRequest request) {
+        GenericAddOrUpdateResponse<CandidateEmailListRequest> response = examManagementService.addCandidatesToExam(examId, request);
+        return ResponseEntity.ok(response);
+    }
 
 //    @GetMapping("/{examId}")
 //    public Exam getExam(@PathVariable long examId){

@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testify.Testify_Backend.enums.QuestionType;
 import com.testify.Testify_Backend.model.*;
-import com.testify.Testify_Backend.repository.ExamRepository;
-import com.testify.Testify_Backend.repository.ExamSetterRepository;
-import com.testify.Testify_Backend.repository.OrganizationRepository;
-import com.testify.Testify_Backend.repository.QuestionRepository;
+import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.exam_management.*;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.utils.UserUtil;
@@ -17,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,6 +27,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
     private final QuestionRepository questionRepository;
+    private final CandidateRepository candidateRepository;
 
     private final ObjectMapper objectMapper;
 
@@ -180,4 +179,26 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         Exam exam = examRepository.findById(examId).orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
         return ResponseEntity.ok(exam);
     }
+
+    @Override
+    @Transactional
+    public GenericAddOrUpdateResponse<CandidateEmailListRequest> addCandidatesToExam(long examId, CandidateEmailListRequest request) {
+        GenericAddOrUpdateResponse<CandidateEmailListRequest> response = new GenericAddOrUpdateResponse<>();
+
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with id: " + examId));
+
+        List<Candidate> candidates = request.getEmails().stream()
+                .map(email -> candidateRepository.findByEmail(email)
+                        .orElseThrow(() -> new RuntimeException("Candidate not found with email: " + email)))
+                .collect(Collectors.toList());
+
+        exam.getCandidates().addAll(candidates);
+        examRepository.save(exam);
+
+        response.setSuccess(true);
+        response.setMessage("candidate added successfully");
+        return response;
+    }
+
 }
