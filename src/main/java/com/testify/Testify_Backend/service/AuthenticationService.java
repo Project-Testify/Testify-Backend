@@ -134,10 +134,10 @@ public class AuthenticationService {
             // Log the confirmation link
             log.info("Confirmation link: {}", link);
 
-            emailSender.send(
-                    request.getEmail(),
-                    buildEmail(request.getEmail(), link)
-            );
+//            emailSender.send(
+//                    request.getEmail(),
+//                    buildEmail(request.getEmail(), link)
+//            );
 
             //TODO: save jwt token
             var jwtToken = jwtService.generateToken(savedUser);
@@ -208,14 +208,18 @@ public class AuthenticationService {
         var user = userService.findByEmail(request.getEmail()).orElse(null);
 
         if (user == null) {
+            response.setSuccess(false);
             response.addError("email", "Email does not exist");
         } else if (!user.isEnabled()) {
+            response.setSuccess(false);
             response.addError("email", "Email is not verified");
         } else if (!user.isVerified()) {
+            response.setSuccess(false);
             response.addError("email",
                     "your account has not been approved by an admin yet.");
         } else if (!passwordEncoder.matches(request.getPassword(),
                 user.getPassword())) {
+            response.setSuccess(false);
             response.addError("password", "Password is incorrect");
         } else {
             try {
@@ -234,7 +238,11 @@ public class AuthenticationService {
                 response.setRefreshToken(refreshToken);
                 response.setId(user.getId());
                 response.setEmail(user.getEmail());
+                response.setUserName(user.getUsername());
                 response.setRole(user.getRole());
+                response.setFirstName(user instanceof Candidate ? ((Candidate) user).getFirstName() : user instanceof Organization ? ((Organization) user).getFirstName() : null);
+                response.setLastName(user instanceof Candidate ? ((Candidate) user).getLastName() : null);
+
             } catch (Exception e) {
                 response.setSuccess(false);
                 response.addError("auth", "Authentication failed");

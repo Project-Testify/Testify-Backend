@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.requests.organization_management;
 
+import com.testify.Testify_Backend.enums.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,15 @@ import java.util.List;
 @Builder
 @Data
 public class AddExamSetterRequest {
-    private Long examSetterId;
-    private List<Long> courseModuleIds;
+    private String email;
+    private String password;
+    private String username;
+    private String contactNo;
+    private UserRole role;
+
+
+    private String firstName;
+    private String lastName;
+    private String bio;
+
 }

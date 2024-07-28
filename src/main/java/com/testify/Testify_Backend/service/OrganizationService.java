@@ -4,6 +4,7 @@ import com.testify.Testify_Backend.model.CourseModule;
 import com.testify.Testify_Backend.model.ExamSetter;
 import com.testify.Testify_Backend.requests.VerificationRequestRequest;
 import com.testify.Testify_Backend.requests.organization_management.AddExamSetterRequest;
+import com.testify.Testify_Backend.requests.organization_management.CandidateGroupRequest;
 import com.testify.Testify_Backend.requests.organization_management.CourseModuleRequest;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
@@ -20,4 +21,5 @@ public interface OrganizationService {
     GenericAddOrUpdateResponse<CourseModule> addCourseModuleToOrganization(long organizationId, CourseModuleRequest courseModuleRequest);
 
     Set<CourseModuleResponse> getCourseModulesByOrganization(Long organizationId);
+    GenericAddOrUpdateResponse<CandidateGroupRequest> createCandidateGroup(long organizationId, CandidateGroupRequest candidateGroupRequest);
 }
