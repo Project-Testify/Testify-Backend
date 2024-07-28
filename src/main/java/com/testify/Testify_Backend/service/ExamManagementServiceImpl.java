@@ -10,8 +10,10 @@ import com.testify.Testify_Backend.repository.OrganizationRepository;
 import com.testify.Testify_Backend.repository.QuestionRepository;
 import com.testify.Testify_Backend.requests.exam_management.*;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
+import com.testify.Testify_Backend.utils.UserUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,11 +34,22 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
     //Create Exam
     @Override
-    public void createExam(ExamRequest examRequest){
+    public GenericAddOrUpdateResponse<ExamRequest> createExam(ExamRequest examRequest){
+
+        GenericAddOrUpdateResponse<ExamRequest> response = new GenericAddOrUpdateResponse<>();
+
+        String currentUserEmail = UserUtil.getCurrentUserName();
+
+        Optional<ExamSetter> optionalExamSetter = examSetterRepository.findByEmail(currentUserEmail);
+        if (optionalExamSetter.isEmpty()) {
+            throw new IllegalArgumentException("Exam setter not found for the current user");
+        }
+
+        ExamSetter examSetter = optionalExamSetter.get();
 
         Exam exam = Exam.builder()
                 .title(examRequest.getTitle())
-                .examSetter(examSetterRepository.findById(examRequest.getExamSetterId()).get())
+                .examSetter(examSetter)
                 .organization(organizationRepository.findById(examRequest.getOrganizationId()).get())
                 .description(examRequest.getDescription())
                 .instructions(examRequest.getInstructions())
@@ -48,6 +61,11 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                 .isPrivate(examRequest.isPrivate())
                 .build();
         examRepository.save(exam);
+
+        response.setSuccess(true);
+        response.setMessage("Exam created successfully");
+        response.setId(exam.getId());
+        return response;
     }
 
 
@@ -156,5 +174,10 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         }
 
         return response;
+    }
+
+    public ResponseEntity<Exam> getExamResponse(long examId){
+        Exam exam = examRepository.findById(examId).orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
+        return ResponseEntity.ok(exam);
     }
 }

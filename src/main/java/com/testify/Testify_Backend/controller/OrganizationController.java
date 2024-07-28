@@ -3,6 +3,7 @@ package com.testify.Testify_Backend.controller;
 import com.testify.Testify_Backend.model.ExamSetter;
 import com.testify.Testify_Backend.requests.VerificationRequestRequest;
 import com.testify.Testify_Backend.requests.organization_management.AddExamSetterRequest;
+import com.testify.Testify_Backend.requests.organization_management.CandidateGroupRequest;
 import com.testify.Testify_Backend.requests.organization_management.CourseModuleRequest;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
@@ -40,5 +41,13 @@ public class OrganizationController {
     public ResponseEntity<Set<CourseModuleResponse>> getCourseModulesByOrganization(@PathVariable long organizationId) {
         Set<CourseModuleResponse> courseModules = organizationService.getCourseModulesByOrganization(organizationId);
         return ResponseEntity.ok(courseModules);
+    }
+
+    @PostMapping("/{organizationId}/candidate-group")
+    public GenericAddOrUpdateResponse<CandidateGroupRequest> createCandidateGroup(
+            @PathVariable long organizationId,
+            @RequestBody CandidateGroupRequest candidateGroupRequest)
+    {
+        return organizationService.createCandidateGroup(organizationId, candidateGroupRequest);
     }
 }

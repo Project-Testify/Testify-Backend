@@ -9,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static com.testify.Testify_Backend.util.UserUtil.getCurrentUserId;
-
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -32,7 +30,13 @@ public class AuthenticationController {
 
     @PostMapping("/authenticate") //login honde
     public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request){
-        return ResponseEntity.ok(authService.authenticate(request));
+        AuthenticationResponse response = authService.authenticate(request);
+        //if response.setSuccess(true) then return 200 else return 400
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        }else {
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @GetMapping(path = "confirm")
