@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Builder
-public class ExamRequest {
+public class  ExamRequest {
     private String title;
     private String description;
     private String instructions;
