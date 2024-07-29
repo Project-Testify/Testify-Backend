@@ -1,5 +1,7 @@
 package com.testify.Testify_Backend.responses.candidate_management;
 
+import com.testify.Testify_Backend.model.Organization;
+import com.testify.Testify_Backend.responses.OrgResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
@@ -12,5 +14,5 @@ public class CandidateExam {
     private int duration;
     private String instructions;
     private int totalMarks;
-    private String organization;
+    private OrgResponse organization;
 }

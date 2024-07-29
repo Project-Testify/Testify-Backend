@@ -33,23 +33,45 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
     //Create Exam
     @Override
-    public GenericAddOrUpdateResponse<ExamRequest> createExam(ExamRequest examRequest){
-
+    public GenericAddOrUpdateResponse<ExamRequest> createExam(ExamRequest examRequest) {
         GenericAddOrUpdateResponse<ExamRequest> response = new GenericAddOrUpdateResponse<>();
 
         String currentUserEmail = UserUtil.getCurrentUserName();
+        log.info("Current User Email: {}", currentUserEmail);
 
         Optional<ExamSetter> optionalExamSetter = examSetterRepository.findByEmail(currentUserEmail);
-        if (optionalExamSetter.isEmpty()) {
-            throw new IllegalArgumentException("Exam setter not found for the current user");
+        if (optionalExamSetter.isPresent()) {
+            log.info("Exam Setter found: {}", optionalExamSetter.get());
+            ExamSetter examSetter = optionalExamSetter.get();
+            Exam exam = createExamEntity(examRequest, examSetter, null);
+            examRepository.save(exam);
+            response.setSuccess(true);
+            response.setMessage("Exam created successfully by exam setter.");
+            response.setId(exam.getId());
+            return response;
         }
 
-        ExamSetter examSetter = optionalExamSetter.get();
+        Optional<Organization> optionalOrganization = organizationRepository.findByEmail(currentUserEmail);
+        if (optionalOrganization.isPresent()) {
+            log.info("Organization found: {}", optionalOrganization.get());
+            Organization organization = optionalOrganization.get();
+            Exam exam = createExamEntity(examRequest, null, organization);
+            examRepository.save(exam);
+            response.setSuccess(true);
+            response.setMessage("Exam created successfully by organization.");
+            response.setId(exam.getId());
+            return response;
+        }
 
-        Exam exam = Exam.builder()
+        log.error("User not found as either an exam setter or organization.");
+        throw new IllegalArgumentException("User not found as either an exam setter or organization");
+    }
+
+    private Exam createExamEntity(ExamRequest examRequest, ExamSetter examSetter, Organization organization) {
+        return Exam.builder()
                 .title(examRequest.getTitle())
                 .examSetter(examSetter)
-                .organization(organizationRepository.findById(examRequest.getOrganizationId()).get())
+                .organization(organization)
                 .description(examRequest.getDescription())
                 .instructions(examRequest.getInstructions())
                 .duration(examRequest.getDuration())
@@ -59,17 +81,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                 .endDatetime(examRequest.getEndDatetime())
                 .isPrivate(examRequest.isPrivate())
                 .build();
-        examRepository.save(exam);
-
-        response.setSuccess(true);
-        response.setMessage("Exam created successfully");
-        response.setId(exam.getId());
-        return response;
     }
-
-
-
-
 
     //Get exam
     public Exam getExam(long examId){
