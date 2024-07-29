@@ -33,7 +33,7 @@ public class AuthenticationService {
     private final UserService userService;
     private final EmailSender emailSender;
     private final TokenRepository tokenRepository;
-    private final AttendeeRepository attendeeRepository;
+    private final CandidateRepository attendeeRepository;
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
     private User user;
