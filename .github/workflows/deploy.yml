@@ -78,5 +78,5 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         script: |
-          sudo systemctl stop testify
-          sudo systemctl start testify
+          systemctl stop testify
+          systemctl start testify
