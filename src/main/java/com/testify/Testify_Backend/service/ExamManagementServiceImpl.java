@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testify.Testify_Backend.enums.QuestionType;
 import com.testify.Testify_Backend.model.*;
-import com.testify.Testify_Backend.repository.ExamRepository;
-import com.testify.Testify_Backend.repository.ExamSetterRepository;
-import com.testify.Testify_Backend.repository.OrganizationRepository;
-import com.testify.Testify_Backend.repository.QuestionRepository;
+import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.exam_management.*;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.utils.UserUtil;
@@ -17,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,28 +27,51 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
     private final QuestionRepository questionRepository;
+    private final CandidateRepository candidateRepository;
 
     private final ObjectMapper objectMapper;
 
     //Create Exam
     @Override
-    public GenericAddOrUpdateResponse<ExamRequest> createExam(ExamRequest examRequest){
-
+    public GenericAddOrUpdateResponse<ExamRequest> createExam(ExamRequest examRequest) {
         GenericAddOrUpdateResponse<ExamRequest> response = new GenericAddOrUpdateResponse<>();
 
         String currentUserEmail = UserUtil.getCurrentUserName();
+        log.info("Current User Email: {}", currentUserEmail);
 
         Optional<ExamSetter> optionalExamSetter = examSetterRepository.findByEmail(currentUserEmail);
-        if (optionalExamSetter.isEmpty()) {
-            throw new IllegalArgumentException("Exam setter not found for the current user");
+        if (optionalExamSetter.isPresent()) {
+            log.info("Exam Setter found: {}", optionalExamSetter.get());
+            ExamSetter examSetter = optionalExamSetter.get();
+            Exam exam = createExamEntity(examRequest, examSetter, null);
+            examRepository.save(exam);
+            response.setSuccess(true);
+            response.setMessage("Exam created successfully by exam setter.");
+            response.setId(exam.getId());
+            return response;
         }
 
-        ExamSetter examSetter = optionalExamSetter.get();
+        Optional<Organization> optionalOrganization = organizationRepository.findByEmail(currentUserEmail);
+        if (optionalOrganization.isPresent()) {
+            log.info("Organization found: {}", optionalOrganization.get());
+            Organization organization = optionalOrganization.get();
+            Exam exam = createExamEntity(examRequest, null, organization);
+            examRepository.save(exam);
+            response.setSuccess(true);
+            response.setMessage("Exam created successfully by organization.");
+            response.setId(exam.getId());
+            return response;
+        }
 
-        Exam exam = Exam.builder()
+        log.error("User not found as either an exam setter or organization.");
+        throw new IllegalArgumentException("User not found as either an exam setter or organization");
+    }
+
+    private Exam createExamEntity(ExamRequest examRequest, ExamSetter examSetter, Organization organization) {
+        return Exam.builder()
                 .title(examRequest.getTitle())
                 .examSetter(examSetter)
-                .organization(organizationRepository.findById(examRequest.getOrganizationId()).get())
+                .organization(organization)
                 .description(examRequest.getDescription())
                 .instructions(examRequest.getInstructions())
                 .duration(examRequest.getDuration())
@@ -60,17 +81,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                 .endDatetime(examRequest.getEndDatetime())
                 .isPrivate(examRequest.isPrivate())
                 .build();
-        examRepository.save(exam);
-
-        response.setSuccess(true);
-        response.setMessage("Exam created successfully");
-        response.setId(exam.getId());
-        return response;
     }
-
-
-
-
 
     //Get exam
     public Exam getExam(long examId){
@@ -180,4 +191,26 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         Exam exam = examRepository.findById(examId).orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
         return ResponseEntity.ok(exam);
     }
+
+    @Override
+    @Transactional
+    public GenericAddOrUpdateResponse<CandidateEmailListRequest> addCandidatesToExam(long examId, CandidateEmailListRequest request) {
+        GenericAddOrUpdateResponse<CandidateEmailListRequest> response = new GenericAddOrUpdateResponse<>();
+
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with id: " + examId));
+
+        List<Candidate> candidates = request.getEmails().stream()
+                .map(email -> candidateRepository.findByEmail(email)
+                        .orElseThrow(() -> new RuntimeException("Candidate not found with email: " + email)))
+                .collect(Collectors.toList());
+
+        exam.getCandidates().addAll(candidates);
+        examRepository.save(exam);
+
+        response.setSuccess(true);
+        response.setMessage("candidate added successfully");
+        return response;
+    }
+
 }
