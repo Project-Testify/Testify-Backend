@@ -39,7 +39,7 @@ jobs:
         name: Testify-Backend.jar
     
     - name: Environment variables
-      run: echo ${{ secrets.ENV }} >> .env
+      run: echo "${{ secrets.ENV }}" >> .env
 
     - name: Copy files via SCP
       uses: appleboy/scp-action@master
