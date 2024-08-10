@@ -29,7 +29,7 @@ jobs:
         username: ${{ secrets.DIGITALOCEAN_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
-        source: "target/*.jar"  # Adjust based on where your build artifacts are located
+        source: "target/Testify-Backend.jar"  # Adjust based on where your build artifacts are located
         target: "/opt/testify/backend"  # Adjust based on where you want to copy the files
 
 #   deploy:
