@@ -109,6 +109,8 @@
 	</dependencies>
 
 	<build>
+	    <finalName>Testify-Backend</finalName>
+
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -123,6 +125,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+
 	</build>
 
 </project>
