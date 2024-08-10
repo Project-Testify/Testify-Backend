@@ -22,6 +22,22 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml -DskipTests
 
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: Testify-Backend.jar
+        path: target/Testify-Backend.jar
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: Testify-Backend.jar
+
     - name: Copy files via SCP
       uses: appleboy/scp-action@master
       with:
@@ -29,8 +45,9 @@ jobs:
         username: ${{ secrets.DIGITALOCEAN_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
-        source: "target/Testify-Backend.jar"  # Adjust based on where your build artifacts are located
-        target: "/opt/testify/backend/Testify-Backend.jar"  # Adjust based on where you want to copy the files
+        source: "Testify-Backend.jar"
+        target: "/opt/testify/backend"
+
 
 #   deploy:
 #     runs-on: ubuntu-latest
