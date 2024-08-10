@@ -22,13 +22,6 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml -DskipTests
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
     - name: Copy files via SCP
       uses: appleboy/scp-action@master
       with:
@@ -38,6 +31,23 @@ jobs:
         port: 22
         source: "target/*.jar"  # Adjust based on where your build artifacts are located
         target: "/opt/testify/backend"  # Adjust based on where you want to copy the files
+
+#   deploy:
+#     runs-on: ubuntu-latest
+#     needs: build
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v2
+
+#     - name: Copy files via SCP
+#       uses: appleboy/scp-action@master
+#       with:
+#         host: ${{ secrets.DIGITALOCEAN_IP }}
+#         username: ${{ secrets.DIGITALOCEAN_USERNAME }}
+#         key: ${{ secrets.SSH_PRIVATE_KEY }}
+#         port: 22
+#         source: "target/*.jar"  # Adjust based on where your build artifacts are located
+#         target: "/opt/testify/backend"  # Adjust based on where you want to copy the files
 
     # - name: Restart server
     #   uses: appleboy/ssh-action@master
