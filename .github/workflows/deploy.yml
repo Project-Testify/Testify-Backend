@@ -37,6 +37,9 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: Testify-Backend.jar
+    
+    - name: Environment variables
+      run: echo ${{ secrets.ENV }} >> .env
 
     - name: Copy files via SCP
       uses: appleboy/scp-action@master
@@ -45,7 +48,7 @@ jobs:
         username: ${{ secrets.DIGITALOCEAN_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
-        source: "Testify-Backend.jar"
+        source: "Testify-Backend.jar .env" 
         target: "/opt/testify/backend"
 
 
@@ -66,13 +69,13 @@ jobs:
 #         source: "target/*.jar"  # Adjust based on where your build artifacts are located
 #         target: "/opt/testify/backend"  # Adjust based on where you want to copy the files
 
-    # - name: Restart server
-    #   uses: appleboy/ssh-action@master
-    #   with:
-    #     host: ${{ secrets.DIGITALOCEAN_IP }}
-    #     username: ${{ secrets.DIGITALOCEAN_USERNAME }}
-    #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-    #     port: 22
-    #     script: |
-    #       sudo systemctl stop your-service
-    #       sudo systemctl start your-service
+    - name: Restart server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DIGITALOCEAN_IP }}
+        username: ${{ secrets.DIGITALOCEAN_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          sudo systemctl stop testify
+          sudo systemctl start testify
