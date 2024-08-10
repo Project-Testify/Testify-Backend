@@ -48,7 +48,8 @@ jobs:
         username: ${{ secrets.DIGITALOCEAN_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
-        source: "Testify-Backend.jar .env" 
+        # copy jar and .env file
+        source: "*"
         target: "/opt/testify/backend"
 
 
