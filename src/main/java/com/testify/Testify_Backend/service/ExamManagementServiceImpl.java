@@ -3,6 +3,7 @@ package com.testify.Testify_Backend.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testify.Testify_Backend.enums.QuestionType;
+import com.testify.Testify_Backend.enums.UserRole;
 import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.exam_management.*;
@@ -28,6 +29,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final OrganizationRepository organizationRepository;
     private final QuestionRepository questionRepository;
     private final CandidateRepository candidateRepository;
+    private  final UserRepository userRepository;
 
     private final ObjectMapper objectMapper;
 
@@ -39,49 +41,40 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         String currentUserEmail = UserUtil.getCurrentUserName();
         log.info("Current User Email: {}", currentUserEmail);
 
-        Optional<ExamSetter> optionalExamSetter = examSetterRepository.findByEmail(currentUserEmail);
-        if (optionalExamSetter.isPresent()) {
-            log.info("Exam Setter found: {}", optionalExamSetter.get());
-            ExamSetter examSetter = optionalExamSetter.get();
-            Exam exam = createExamEntity(examRequest, examSetter, null);
-            examRepository.save(exam);
+        Optional<User> optionalUser = userRepository.findByEmail(currentUserEmail);
+
+        Organization organization = organizationRepository.findById(examRequest.getOrganizationId())
+                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+
+        if(optionalUser.isEmpty()){
+            response.setSuccess(false);
+            response.setMessage("User not found");
+            return response;
+        }else{
+            Exam exam = Exam.builder()
+                    .title(examRequest.getTitle())
+                    .createdBy(optionalUser.get())
+                    .organization(organization)
+                    .description(examRequest.getDescription())
+                    .instructions(examRequest.getInstructions())
+                    .duration(examRequest.getDuration())
+                    .startDatetime(examRequest.getStartDatetime())
+                    .endDatetime(examRequest.getEndDatetime())
+                    .isPrivate(true)
+                    .build();
+            exam = examRepository.save(exam);
+
             response.setSuccess(true);
-            response.setMessage("Exam created successfully by exam setter.");
+            response.setMessage("Exam created successfully");
             response.setId(exam.getId());
             return response;
         }
 
-        Optional<Organization> optionalOrganization = organizationRepository.findByEmail(currentUserEmail);
-        if (optionalOrganization.isPresent()) {
-            log.info("Organization found: {}", optionalOrganization.get());
-            Organization organization = optionalOrganization.get();
-            Exam exam = createExamEntity(examRequest, null, organization);
-            examRepository.save(exam);
-            response.setSuccess(true);
-            response.setMessage("Exam created successfully by organization.");
-            response.setId(exam.getId());
-            return response;
-        }
 
-        log.error("User not found as either an exam setter or organization.");
-        throw new IllegalArgumentException("User not found as either an exam setter or organization");
+
+
     }
 
-    private Exam createExamEntity(ExamRequest examRequest, ExamSetter examSetter, Organization organization) {
-        return Exam.builder()
-                .title(examRequest.getTitle())
-                .examSetter(examSetter)
-                .organization(organization)
-                .description(examRequest.getDescription())
-                .instructions(examRequest.getInstructions())
-                .duration(examRequest.getDuration())
-                .totalMarks(examRequest.getTotalMarks())
-                .passMarks(examRequest.getPassMarks())
-                .startDatetime(examRequest.getStartDatetime())
-                .endDatetime(examRequest.getEndDatetime())
-                .isPrivate(examRequest.isPrivate())
-                .build();
-    }
 
     //Get exam
     public Exam getExam(long examId){

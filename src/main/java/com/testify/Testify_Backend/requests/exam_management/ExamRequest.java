@@ -12,14 +12,12 @@ import java.time.LocalDateTime;
 @Builder
 public class  ExamRequest {
     private String title;
+    private Long organizationId;
     private String description;
     private String instructions;
     private int duration;
-    private int totalMarks;
-    private int passMarks;
-    private long organizationId;
-
     private LocalDateTime startDatetime;
     private LocalDateTime endDatetime;
     private boolean isPrivate;
+    private Long moderatorId;
 }
