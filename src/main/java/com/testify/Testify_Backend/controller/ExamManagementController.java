@@ -11,6 +11,7 @@ import com.testify.Testify_Backend.service.ExamManagementServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.service.annotation.GetExchange;
 
 @RestController
 @RequestMapping("/api/v1/exam")
@@ -19,8 +20,13 @@ public class ExamManagementController {
     private final ExamManagementService examManagementService;
 
     @PostMapping
-    public GenericAddOrUpdateResponse<ExamRequest> createExam(@RequestBody ExamRequest examRequest){
-        return examManagementService.createExam(examRequest);
+    public ResponseEntity<GenericAddOrUpdateResponse<ExamRequest>> createExam(@RequestBody ExamRequest examRequest){
+        GenericAddOrUpdateResponse<ExamRequest> response = examManagementService.createExam(examRequest);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        }else{
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @PostMapping("/{examId}/addQuestion")
