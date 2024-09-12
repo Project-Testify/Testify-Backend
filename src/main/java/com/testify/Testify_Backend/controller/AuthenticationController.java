@@ -45,11 +45,4 @@ public class AuthenticationController {
         return authService.confirmToken(token);
     }
 
-
-    @PostMapping("/regOrgAdmin")
-    public void registerOrgAdmin(@RequestBody OrganisationRegistrationRequest request){
-        System.out.println(request);
-//        return null;
-    }
-
 }

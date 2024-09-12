@@ -76,6 +76,9 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     }
 
 
+
+
+
     //Get exam
     public Exam getExam(long examId){
         return examRepository.findById(examId).get();
