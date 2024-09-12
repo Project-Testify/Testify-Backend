@@ -27,7 +27,7 @@ public class Exam {
     private String title;
 
     @ManyToOne
-    private ExamSetter examSetter;
+    private User createdBy;
 
     @ManyToOne
     private Organization organization;
@@ -35,8 +35,6 @@ public class Exam {
     private String description;
     private String instructions;
     private int duration;
-    private int totalMarks;
-    private int passMarks;
 
     @Column(nullable = false)
     private LocalDateTime startDatetime;
