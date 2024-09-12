@@ -1,6 +1,7 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.requests.auth.AuthenticationRequest;
+import com.testify.Testify_Backend.requests.auth.OrganisationRegistrationRequest;
 import com.testify.Testify_Backend.responses.auth.AuthenticationResponse;
 import com.testify.Testify_Backend.requests.auth.RegistrationRequest;
 import com.testify.Testify_Backend.responses.auth.RegisterResponse;
@@ -44,5 +45,11 @@ public class AuthenticationController {
         return authService.confirmToken(token);
     }
 
+
+    @PostMapping("/regOrgAdmin")
+    public void registerOrgAdmin(@RequestBody OrganisationRegistrationRequest request){
+        System.out.println(request);
+//        return null;
+    }
 
 }
