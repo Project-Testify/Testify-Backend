@@ -36,7 +36,6 @@ public class AuthenticationService {
     private final CandidateRepository attendeeRepository;
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
-    private User user;
 
     //TEST UPDATE
     public RegisterResponse register(@ModelAttribute RegistrationRequest request, boolean preVerified) {
