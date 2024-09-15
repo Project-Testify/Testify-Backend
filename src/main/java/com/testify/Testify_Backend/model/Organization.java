@@ -14,6 +14,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Table(name = "organization")
 @PrimaryKeyJoinColumn(name = "id")
+@ToString(callSuper = true)
 public class Organization extends User{
     @Column(nullable = false)
     private String firstName;

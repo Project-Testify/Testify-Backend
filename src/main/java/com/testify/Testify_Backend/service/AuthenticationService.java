@@ -42,6 +42,7 @@ public class AuthenticationService {
     public RegisterResponse register(@ModelAttribute RegistrationRequest request, boolean preVerified) {
 
         var response = new RegisterResponse();
+        System.out.println("Registration request: " + request);
 
         if (userService.findByEmail(request.getEmail()).isPresent()) {
             response.addError("email", "Email is already taken");
@@ -240,7 +241,7 @@ public class AuthenticationService {
                 response.setEmail(user.getEmail());
                 response.setUserName(user.getUsername());
                 response.setRole(user.getRole());
-                response.setFirstName(user instanceof Candidate ? ((Candidate) user).getFirstName() : user instanceof Organization ? ((Organization) user).getFirstName() : null);
+                response.setFirstName(user instanceof Candidate ? ((Candidate) user).getFirstName() : user instanceof Organization ? ((Organization) user).getFirstName() : ( user instanceof Admin ? ((Admin) user).getFirstName() : null ));
                 response.setLastName(user instanceof Candidate ? ((Candidate) user).getLastName() : null);
 
             } catch (Exception e) {
