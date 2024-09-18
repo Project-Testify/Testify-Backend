@@ -7,4 +7,8 @@ import java.util.List;
 public interface AdminService {
 
     List<Organization> getOrganizationGroup();
+
+    int verifyOrganization(int id);
+
+    int rejectOrganization(int id);
 }

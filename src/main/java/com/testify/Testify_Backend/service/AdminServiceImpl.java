@@ -2,11 +2,9 @@ package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.Organization;
 import com.testify.Testify_Backend.repository.OrganizationRepository;
-import com.testify.Testify_Backend.responses.admin.OrganizationGroupResponse;
+import com.testify.Testify_Backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,12 +14,25 @@ import java.util.List;
 @Slf4j
 public class AdminServiceImpl implements AdminService{
     private final OrganizationRepository organizationRepository;
+    private final UserRepository userRepository;
 
     @Override
     public List<Organization> getOrganizationGroup() {
         //OrganizationGroupResponse response = new OrganizationGroupResponse();
 
-        List<Organization> organization = organizationRepository.findAll();
+        List<Organization> organization = organizationRepository.findByVerifiedFalse();
         return organization;
+    }
+
+    @Override
+    public int verifyOrganization(int id) {
+
+        int response = userRepository.verifyUser(id);
+        return response;
+    }
+
+    @Override
+    public int rejectOrganization(int id) {
+        return userRepository.unVerifyUser(id);
     }
 }

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -23,9 +24,10 @@ import java.util.stream.Collectors;
 @ToString(callSuper = true)
 public class AdminController {
     private final AdminService adminService;
-
+    
     @GetMapping("/getOrganizationRequests")
     public ResponseEntity<List<OrganizationGroupResponse>> getOrganizations() {
+            log.info("getOrganizations - start");
             List<Organization> organizations = adminService.getOrganizationGroup();
 
             List<OrganizationGroupResponse> organizationGroupResponses = organizations.stream().map( org ->
@@ -37,12 +39,29 @@ public class AdminController {
                             org.getCity(),
                             org.getState(),
                             org.getBio(),
-                            org.getWebsite()
+                            org.getWebsite(),
+                            org.getProfileImage()
                     )
                     ).collect(Collectors.toList());
 
-        log.info("controleer : " + organizationGroupResponses);
+        log.info("controller : {}", organizationGroupResponses);
 
         return ResponseEntity.ok(organizationGroupResponses);
+    }
+
+    @PatchMapping("/verifyOrganization/{userId}")
+    public ResponseEntity verifyOrganization(@PathVariable int userId) {
+        int response = adminService.verifyOrganization(userId);
+        log.info("controller : {}", response);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/rejectOrganization/{userId}")
+    public ResponseEntity rejectOrganization(@PathVariable int userId) {
+
+        int response = adminService.rejectOrganization(userId);
+        log.info("controller : {}", response);
+
+        return ResponseEntity.ok(response);
     }
 }

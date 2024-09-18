@@ -1,7 +1,6 @@
 package com.testify.Testify_Backend.responses.admin;
 
 
-import com.testify.Testify_Backend.model.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,5 +19,5 @@ public class OrganizationGroupResponse {
     private String state;
     private String bio;
     private String website;
-
+    private String profileImage;
 }
