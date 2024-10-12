@@ -1,9 +1,9 @@
 name: Deploy Spring Boot Application
 
-on:
-  push:
-    branches:
-      - release  # Set this to the branch you want to deploy from
+# on:
+#   push:
+#     branches:
+#       - release  # Set this to the branch you want to deploy from
 
 jobs:
   build:
