@@ -4,16 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@SuperBuilder
-public class EssayRequest{
-    private long examId;
+public class EssayUpdateRequest {
+    private long id;
     private String questionText;
     private List<CoverPointRequest> coveringPoints;
 }

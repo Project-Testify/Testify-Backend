@@ -18,8 +18,8 @@ import java.util.Set;
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-@DiscriminatorValue("ESSAY")
+@DiscriminatorValue("Essay")
 public class Essay extends Question{
-    @OneToMany(mappedBy = "essayQuestion", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "essayQuestion", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<EssayCoverPoint> coverPoints;
 }
