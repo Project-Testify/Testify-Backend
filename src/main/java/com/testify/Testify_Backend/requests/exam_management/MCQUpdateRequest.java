@@ -1,18 +1,18 @@
 package com.testify.Testify_Backend.requests.exam_management;
 
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
-@Setter
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@SuperBuilder
-@ToString(callSuper = true)
-public class MCQRequest{
-    private long examId;
+public class MCQUpdateRequest {
+    private long id;
     private String questionText;
     private List<MCQOptionRequest> options;
 }

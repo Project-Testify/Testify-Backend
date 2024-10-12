@@ -23,7 +23,6 @@ import java.util.List;
 @Table(name = "_user")
 public abstract class User implements UserDetails {
 
-
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
     @SequenceGenerator(name = "user_seq", sequenceName = "users_seq", allocationSize = 1)
