@@ -5,15 +5,18 @@ import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.exam_management.*;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
-import com.testify.Testify_Backend.responses.exam_management.QuestionSequenceResponse;
+import com.testify.Testify_Backend.responses.GenericDeleteResponse;
+import com.testify.Testify_Backend.responses.exam_management.*;
 import com.testify.Testify_Backend.utils.UserUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -32,7 +35,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final CandidateRepository candidateRepository;
     private  final UserRepository userRepository;
 
-    private final ObjectMapper objectMapper;
+
 
     //Create Exam
     @Override
@@ -242,6 +245,33 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         return response;
     }
 
+    @Transactional
+    public ResponseEntity<GenericDeleteResponse<Void>> deleteQuestion(long questionId) {
+        GenericDeleteResponse<Void> response = new GenericDeleteResponse<>();
+
+        try {
+            Question question = questionRepository.findById(questionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Question not found with id: " + questionId));
+
+            question.setDeleted(true);
+            questionRepository.save(question);
+
+            response.setSuccess(true);
+            response.setMessage("Question deleted successfully");
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            response.setSuccess(false);
+            response.setMessage("Error deleting question: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            log.error("Unexpected error deleting question with id {}: {}", questionId, e.getMessage(), e);
+            response.setSuccess(false);
+            response.setMessage("Unexpected error deleting question");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 
 
 
@@ -306,6 +336,142 @@ public class ExamManagementServiceImpl implements ExamManagementService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);  // Send 500 status with error message
         }
     }
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<QuestionListResponse> getAllQuestionsByExamId(long examId) {
+        QuestionListResponse response = new QuestionListResponse();
+        List<QuestionResponse> questionResponses = new ArrayList<>();
+
+        try {
+            // Fetch questions associated with the exam ID that are not deleted
+            List<Question> questions = questionRepository.findAllActiveQuestionsByExamId(examId);
+
+            // Check if questions are found
+            if (questions.isEmpty()) {
+                response.setErrorMessage("No questions found for exam ID: " + examId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            for (Question question : questions) {
+                String questionType = question instanceof MCQ ? "MCQ" : "Essay";
+
+                List<MCQOptionResponse> options = null;
+                List<EssayCoverPointResponse> coverPoints = null;
+
+                // Populate options for MCQs
+                if (question instanceof MCQ) {
+                    options = ((MCQ) question).getOptions().stream()
+                            .map(option -> MCQOptionResponse.builder()
+                                    .optionId(option.getId())
+                                    .optionText(option.getOptionText())
+                                    .isCorrect(option.isCorrect())
+                                    .marks(option.getMarks())
+                                    .build())
+                            .collect(Collectors.toList());
+                }
+                // Populate cover points for essays
+                else if (question instanceof Essay) {
+                    coverPoints = ((Essay) question).getCoverPoints().stream()
+                            .map(point -> EssayCoverPointResponse.builder()
+                                    .coverPointId(point.getId())
+                                    .coverPointText(point.getCoverPointText())
+                                    .marks(point.getMarks())
+                                    .build())
+                            .collect(Collectors.toList());
+                }
+
+                // Build the QuestionResponse object
+                QuestionResponse questionResponse = QuestionResponse.builder()
+                        .questionId(question.getId())
+                        .questionText(question.getQuestionText())
+                        .questionType(questionType)
+                        .options(options)
+                        .coverPoints(coverPoints)
+                        .build();
+
+                questionResponses.add(questionResponse);
+            }
+
+            // Set the response with the questions
+            response.setExamId(examId);
+            response.setQuestions(questionResponses);
+            return ResponseEntity.ok(response);  // Return 200 OK with questions
+
+        } catch (IllegalArgumentException e) {
+            // Handle specific exceptions
+            response.setErrorMessage("Invalid request: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response); // Return 400 Bad Request
+        } catch (Exception e) {
+            // Log unexpected errors and return a server error response
+            log.error("Unexpected error retrieving questions for exam ID {}: {}", examId, e.getMessage(), e);
+            response.setErrorMessage("Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);  // Return 500 Internal Server Error
+        }
+    }
+
+
+
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<QuestionResponse> getQuestionById(long questionId) {
+        try {
+            // Find the question by ID
+            Question question = questionRepository.findById(questionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Question not found with id: " + questionId));
+
+            // Build the response based on the question type
+            QuestionResponse.QuestionResponseBuilder responseBuilder = QuestionResponse.builder()
+                    .questionId(question.getId())
+                    .questionText(question.getQuestionText());
+
+            // Determine the question type
+            String questionType = question instanceof MCQ ? "MCQ" : "Essay";
+            responseBuilder.questionType(questionType);
+
+            if (question instanceof MCQ) {
+                // Map MCQ options manually
+                List<MCQOptionResponse> options = ((MCQ) question).getOptions().stream()
+                        .map(option -> MCQOptionResponse.builder()
+                                .optionId(option.getId())
+                                .optionText(option.getOptionText())
+                                .isCorrect(option.isCorrect())
+                                .marks(option.getMarks())
+                                .build())
+                        .collect(Collectors.toList());
+                responseBuilder.options(options);
+            } else if (question instanceof Essay) {
+                // Map Essay cover points manually
+                List<EssayCoverPointResponse> coverPoints = ((Essay) question).getCoverPoints().stream()
+                        .map(point -> EssayCoverPointResponse.builder()
+                                .coverPointId(point.getId())
+                                .coverPointText(point.getCoverPointText())
+                                .marks(point.getMarks())
+                                .build())
+                        .collect(Collectors.toList());
+                responseBuilder.coverPoints(coverPoints);
+            }
+
+            QuestionResponse response = responseBuilder.build(); // Build the response
+
+            return ResponseEntity.ok(response); // Return 200 OK with the question data
+
+        } catch (IllegalArgumentException e) {
+            // Log the error and return NOT FOUND response
+            log.error("Error retrieving question with id {}: {}", questionId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(null); // Return 404 NOT FOUND
+        } catch (Exception e) {
+            // Log the unexpected error
+            log.error("Unexpected error retrieving question with id {}: {}", questionId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null); // Return 500 INTERNAL SERVER ERROR
+        }
+    }
+
+
+
+
+
 
 
 

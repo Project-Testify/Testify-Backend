@@ -3,6 +3,9 @@ package com.testify.Testify_Backend.controller;
 import com.testify.Testify_Backend.model.Exam;
 import com.testify.Testify_Backend.requests.exam_management.*;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
+import com.testify.Testify_Backend.responses.GenericDeleteResponse;
+import com.testify.Testify_Backend.responses.exam_management.QuestionListResponse;
+import com.testify.Testify_Backend.responses.exam_management.QuestionResponse;
 import com.testify.Testify_Backend.responses.exam_management.QuestionSequenceResponse;
 import com.testify.Testify_Backend.service.ExamManagementService;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +59,21 @@ public class ExamManagementController {
     @GetMapping("/{examId}/questionSequence")
     public ResponseEntity<QuestionSequenceResponse> getQuestionSequence(@PathVariable long examId){
         return examManagementService.getQuestionSequence(examId);
+    }
+
+    @GetMapping("/{examId}/questions")
+    public ResponseEntity<QuestionListResponse> getAllQuestionsByExamId(@PathVariable long examId){
+        return examManagementService.getAllQuestionsByExamId(examId);
+    }
+
+    @PutMapping("/question/{questionId}")
+    public ResponseEntity<GenericDeleteResponse<Void>> deleteQuestion(@PathVariable long questionId){
+        return examManagementService.deleteQuestion(questionId);
+    }
+
+    @GetMapping("/question/{questionId}")
+    public ResponseEntity<QuestionResponse> getQuestionById(@PathVariable long questionId){
+        return examManagementService.getQuestionById(questionId);
     }
 
     @GetMapping("/{examId}")
