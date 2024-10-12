@@ -77,27 +77,6 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         GenericAddOrUpdateResponse<MCQRequest> response = new GenericAddOrUpdateResponse<>();
         Optional<Exam> exam = examRepository.findById(mcqRequest.getExamId());
 
-<<<<<<< Updated upstream
-    //Get exam
-    public Exam getExam(long examId){
-        return examRepository.findById(examId).get();
-    }
-
-    public GenericAddOrUpdateResponse<QuestionRequest> addQuestion(long examId, QuestionRequest questionRequest) {
-        GenericAddOrUpdateResponse<QuestionRequest> response = new GenericAddOrUpdateResponse<>();
-        Optional<Exam> exam = examRepository.findById(examId);
-
-        try {
-            String questionRequestJson = objectMapper.writeValueAsString(questionRequest);
-            log.info("Received question request: {}", questionRequestJson);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to convert question request to JSON", e);
-        }
-
-        log.info("Exam id: "+examId);
-        //make question object
-=======
->>>>>>> Stashed changes
         if (exam.isEmpty()) {
             response.setSuccess(false);
             response.setMessage("Exam not found");
