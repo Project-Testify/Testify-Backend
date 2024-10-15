@@ -14,6 +14,7 @@ public class RegistrationRequest {
     private String contactNo;
     private UserRole role;
 
+    private String token; //for exam setter
 
     private String firstName;
     private String lastName;

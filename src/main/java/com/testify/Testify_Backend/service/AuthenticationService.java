@@ -19,6 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -36,6 +39,7 @@ public class AuthenticationService {
     private final CandidateRepository attendeeRepository;
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
+    private final ExamSetterInvitationRepository examSetterInvitationRepository;
     private User user;
 
 
@@ -66,6 +70,8 @@ public class AuthenticationService {
                         .build();
                 savedUser = attendeeRepository.save(candidate);
             }else if(request.getRole().equals(UserRole.EXAMSETTER)){
+                Optional<ExamSetterInvitation> examSetterInvitation = examSetterInvitationRepository.findByToken(request.getToken());
+                Organization organization = examSetterInvitation.get().getOrganization();
                 ExamSetter examSetter = ExamSetter.builder()
                         .email(request.getEmail())
                         .username(request.getEmail())
@@ -78,8 +84,20 @@ public class AuthenticationService {
                         .enabled(false)
                         .locked(false)
                         .verified(true)
+                        .organizations(new HashSet<>())
                         .build();
+                examSetter.getOrganizations().add(organization);
                 savedUser = examSetterRepository.save(examSetter);
+                if (!organization.getExamSetters().contains(examSetter)) {
+                    organization.getExamSetters().add(examSetter);
+                    organizationRepository.save(organization);
+                }
+
+                // Mark the invitation as accepted
+                examSetterInvitation.ifPresent(invitation -> {
+                    invitation.setAccepted(true);
+                    examSetterInvitationRepository.save(invitation);
+                });
             } else if (request.getRole().equals(UserRole.ORGANIZATION)) {
                 Organization organization = Organization.builder()
                         .email(request.getEmail())

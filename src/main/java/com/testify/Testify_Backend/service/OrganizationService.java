@@ -2,6 +2,8 @@ package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.CandidateGroup;
 import com.testify.Testify_Backend.model.CourseModule;
+import com.testify.Testify_Backend.model.ExamSetter;
+import com.testify.Testify_Backend.model.ExamSetterInvitation;
 import com.testify.Testify_Backend.requests.VerificationRequestRequest;
 import com.testify.Testify_Backend.requests.organization_management.AddExamSetterRequest;
 import com.testify.Testify_Backend.requests.organization_management.CandidateGroupRequest;
@@ -38,4 +40,8 @@ public interface OrganizationService {
     GenericDeleteResponse deleteCandidate(long groupId, long candidateId);
 
     GenericAddOrUpdateResponse updateCandidateGroup(long groupId, String groupName);
+
+    Set<ExamSetter> getExamSetters(long organizationId);
+
+    Set<ExamSetterInvitation> getExamSetterInvitations(long organizationId);
 }

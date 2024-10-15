@@ -117,14 +117,6 @@ public class OrganizationServiceImpl implements OrganizationService{
         return response;
     }
 
-    public Set<ExamSetter> getSetterFromOrganization(long organizationId) {
-        Organization organization = organizationRepository.findById(organizationId).get();
-        Set<ExamSetter> examSetters = organization.getExamSetters();
-
-        return examSetters;
-    }
-
-
 
     public GenericAddOrUpdateResponse<VerificationRequestRequest> requestVerification(VerificationRequestRequest verificationRequest) throws IOException {
         GenericAddOrUpdateResponse<VerificationRequestRequest> response = new GenericAddOrUpdateResponse<>();
@@ -253,6 +245,18 @@ public class OrganizationServiceImpl implements OrganizationService{
         return response;
     }
 
+    @Override
+    public Set<ExamSetter> getExamSetters(long organizationId) {
+        Organization organization = organizationRepository.findById(organizationId).orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+        return organization.getExamSetters();
+    }
+
+    @Override
+    public Set<ExamSetterInvitation> getExamSetterInvitations(long organizationId) {
+        Set<ExamSetterInvitation> invitations = examSetterInvitationRepository.findByOrganizationId(organizationId);
+        return invitations;
+    }
+
 
     @Override
     public ResponseEntity<GenericAddOrUpdateResponse> inviteExamSetter(long organizationId, InviteExamSetterRequest request) {
@@ -261,7 +265,7 @@ public class OrganizationServiceImpl implements OrganizationService{
                     .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
 
             String token = UUID.randomUUID().toString();
-            String invitationLink = "http://localhost:8080/api/v1/organization/confirm?invitation=" + token;
+            String invitationLink = "http://127.0.0.1:4500/auth/signup/examSetter?invitation=" + token;
 
             ExamSetterInvitation invitation = new ExamSetterInvitation();
             invitation.setEmail(request.getEmail());
@@ -303,9 +307,6 @@ public class OrganizationServiceImpl implements OrganizationService{
         ExamSetterInvitation invitation = examSetterInvitationRepository.findByToken(Token).orElseThrow(() -> new IllegalArgumentException("Invitation not found"));
         invitation.setAccepted(true);
         examSetterInvitationRepository.save(invitation);
-
-
-
         return "Invitation accepted";
     }
 

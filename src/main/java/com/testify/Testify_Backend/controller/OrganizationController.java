@@ -2,6 +2,7 @@ package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.model.CandidateGroup;
 import com.testify.Testify_Backend.model.ExamSetter;
+import com.testify.Testify_Backend.model.ExamSetterInvitation;
 import com.testify.Testify_Backend.requests.VerificationRequestRequest;
 import com.testify.Testify_Backend.requests.organization_management.AddExamSetterRequest;
 import com.testify.Testify_Backend.requests.organization_management.CandidateGroupRequest;
@@ -100,10 +101,24 @@ public class OrganizationController {
         return organizationService.inviteExamSetter(organizationId, request);
     }
 
-    @GetMapping("/confirm")
-    public String verifyEmail(@RequestParam("token") String token) {
+    @PostMapping("/confirm")
+    public String verifyEmail(@RequestParam("invitation") String token) {
+        logger.info(token);
         return organizationService.confirmToken(token);
     }
 
+    //get exam setters by organization
+    @GetMapping("/{organizationId}/examSetters")
+    public ResponseEntity<Set<ExamSetter>> getExamSetters(@PathVariable long organizationId){
+        Set<ExamSetter> examSetters = organizationService.getExamSetters(organizationId);
+        return ResponseEntity.ok(examSetters);
+    }
+
+    //get exam setter invited invitations
+    @GetMapping("/{organizationId}/invitations")
+    public ResponseEntity<Set<ExamSetterInvitation>> getExamSetterInvitations(@PathVariable long organizationId){
+        Set<ExamSetterInvitation> invitations = organizationService.getExamSetterInvitations(organizationId);
+        return ResponseEntity.ok(invitations);
+    }
 
 }
