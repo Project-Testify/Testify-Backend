@@ -43,6 +43,7 @@ public class AuthenticationService {
     private User user;
 
 
+    //TEST UPDATE
     public RegisterResponse register(@ModelAttribute RegistrationRequest request, boolean preVerified) {
 
         var response = new RegisterResponse();

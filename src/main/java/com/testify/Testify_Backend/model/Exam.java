@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.model;
 import com.testify.Testify_Backend.converter.QuestionSequenceConverter;
+import com.testify.Testify_Backend.enums.OrderType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,7 +28,7 @@ public class Exam {
     private String title;
 
     @ManyToOne
-    private ExamSetter examSetter;
+    private User createdBy;
 
     @ManyToOne
     private Organization organization;
@@ -35,8 +36,6 @@ public class Exam {
     private String description;
     private String instructions;
     private int duration;
-    private int totalMarks;
-    private int passMarks;
 
     @Column(nullable = false)
     private LocalDateTime startDatetime;
@@ -46,6 +45,16 @@ public class Exam {
 
     @Column(nullable = false)
     private boolean isPrivate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderType orderType;
+
+    @OneToOne(mappedBy = "exam", cascade = CascadeType.ALL)
+    private FixedOrder fixedOrder;
+
+    @OneToOne(mappedBy = "exam", cascade = CascadeType.ALL)
+    private RandomOrder randomOrder;
 
     @ManyToOne
     @JoinColumn(name = "moderator_id")

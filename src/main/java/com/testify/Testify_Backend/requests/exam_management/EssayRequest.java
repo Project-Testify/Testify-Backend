@@ -12,6 +12,9 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-public class EssayRequest extends QuestionRequest{
+public class EssayRequest{
+    private long examId;
+    private String questionText;
+    private String difficultyLevel;
     private List<CoverPointRequest> coveringPoints;
 }
