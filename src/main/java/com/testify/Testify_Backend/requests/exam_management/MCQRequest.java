@@ -14,5 +14,7 @@ import java.util.List;
 public class MCQRequest{
     private long examId;
     private String questionText;
+    private String difficultyLevel;
     private List<MCQOptionRequest> options;
+
 }

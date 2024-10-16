@@ -28,4 +28,7 @@ public abstract class Question {
 
     @Column(nullable = false)
     private boolean isDeleted;
+
+    @Column(nullable = false)
+    private String difficultyLevel;
 }

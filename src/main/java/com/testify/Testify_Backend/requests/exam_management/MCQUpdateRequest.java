@@ -14,5 +14,6 @@ import java.util.List;
 public class MCQUpdateRequest {
     private long id;
     private String questionText;
+    private String difficultyLevel;
     private List<MCQOptionRequest> options;
 }

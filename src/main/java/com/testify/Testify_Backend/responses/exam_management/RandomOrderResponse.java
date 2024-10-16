@@ -7,9 +7,6 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MCQOptionResponse {
-    private long optionId;
-    private String optionText;
-    private boolean correct;
-    private double marks;
+public class RandomOrderResponse {
+    private Integer randomOrderValue;
 }
