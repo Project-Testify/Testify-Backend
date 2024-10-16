@@ -9,6 +9,7 @@ import com.testify.Testify_Backend.responses.auth.RegisterResponse;
 import com.testify.Testify_Backend.enums.TokenType;
 import com.testify.Testify_Backend.enums.UserRole;
 
+import com.testify.Testify_Backend.utils.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,7 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 @Slf4j
@@ -36,6 +39,7 @@ public class AuthenticationService {
     private final CandidateRepository attendeeRepository;
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
+    private final VerificationRequestRepository verificationRequestRepository;
     private User user;
 
     //TEST UPDATE
@@ -82,6 +86,7 @@ public class AuthenticationService {
                         .build();
                 savedUser = examSetterRepository.save(examSetter);
             } else if (request.getRole().equals(UserRole.ORGANIZATION)) {
+                System.out.println("Organization");
                 Organization organization = Organization.builder()
                         .email(request.getEmail())
                         .username(request.getEmail())
@@ -99,7 +104,30 @@ public class AuthenticationService {
                         .verified(false)
                         .build();
                 savedUser = organizationRepository.save(organization);
-                
+
+                //save verification documents
+                if (request.getVerificationDocuments() != null) {
+                    for (var file : request.getVerificationDocuments()) {
+                        try {
+                            String documentUrl = FileUploadUtil.saveFile(file, "verificationDocument");
+
+                            VerificationRequest uploadedFile = VerificationRequest.builder()
+                                    .verificationDocumentUrl(documentUrl)
+                                    //TODO: add proper verification status
+                                    .verificationStatus("PENDING")
+                                    //Todo: get organization id from logged in user
+                                    .organizationId(savedUser.getId())
+                                    .requestDate(new Date())
+                                    .build();
+
+                            verificationRequestRepository.save(uploadedFile);
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+
             }else if(request.getRole().equals(UserRole.ADMIN)){
                 Admin admin = Admin.builder()
                         .email(request.getEmail())
@@ -115,6 +143,8 @@ public class AuthenticationService {
                         .build();
                 savedUser = userRepository.save(admin);
             }
+
+
 
 
             //TODO: Send confirmation token

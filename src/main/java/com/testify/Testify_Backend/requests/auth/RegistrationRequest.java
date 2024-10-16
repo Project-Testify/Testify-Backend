@@ -2,6 +2,7 @@ package com.testify.Testify_Backend.requests.auth;
 
 import com.testify.Testify_Backend.enums.UserRole;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,5 +25,8 @@ public class RegistrationRequest {
     private String city;
     private String state;
     private String website;
+
+//    veroificationDocuments come as a file
+    private MultipartFile[] verificationDocuments;
 
 }
