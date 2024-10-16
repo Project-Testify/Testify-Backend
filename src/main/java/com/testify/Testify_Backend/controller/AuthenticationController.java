@@ -44,5 +44,4 @@ public class AuthenticationController {
         return authService.confirmToken(token);
     }
 
-
 }
