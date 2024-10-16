@@ -13,5 +13,6 @@ import java.util.List;
 public class EssayUpdateRequest {
     private long id;
     private String questionText;
+    private String difficultyLevel;
     private List<CoverPointRequest> coveringPoints;
 }

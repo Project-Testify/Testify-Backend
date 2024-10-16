@@ -10,23 +10,18 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Getter
 @Setter
-@AllArgsConstructor
 @SuperBuilder
+@AllArgsConstructor
 @NoArgsConstructor
-public class MCQOption {
+
+public class FixedOrder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
-    @Column(nullable = false)
-    private String optionText;
+    @OneToOne
+    @JoinColumn(name = "exam_id", nullable = false)
+    private Exam exam;
 
-    @ManyToOne
-    @JoinColumn(name = "mcq_question_id", nullable = false)
-    private MCQ mcqQuestion;
-
-    private boolean correct;
-
-    @Column(nullable = false)
-    private double marks = 0;
+    private Integer fixedOrderValue;
 }

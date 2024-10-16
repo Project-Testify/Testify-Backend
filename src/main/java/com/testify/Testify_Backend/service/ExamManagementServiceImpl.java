@@ -1,6 +1,6 @@
 package com.testify.Testify_Backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.testify.Testify_Backend.enums.OrderType;
 import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.exam_management.*;
@@ -10,16 +10,14 @@ import com.testify.Testify_Backend.responses.exam_management.*;
 import com.testify.Testify_Backend.utils.UserUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.antlr.v4.runtime.misc.LogManager;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +32,10 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final EssayQuestionRepository essayQuestionRepository;
     private final CandidateRepository candidateRepository;
     private  final UserRepository userRepository;
+    private final RandomOrderRepository randomOrderRepository;
+    private final FixedOrderRepository fixedOrderRepository;
+
+    private final ModelMapper modelMapper;
 
 
 
@@ -65,8 +67,23 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                     .startDatetime(examRequest.getStartDatetime())
                     .endDatetime(examRequest.getEndDatetime())
                     .isPrivate(true)
+                    .orderType(examRequest.getOrderType() != null ? examRequest.getOrderType() : OrderType.FIXED)
                     .build();
             exam = examRepository.save(exam);
+
+            if (exam.getOrderType() == OrderType.FIXED) {
+                FixedOrder fixedOrder = new FixedOrder();
+                fixedOrder.setExam(exam);
+                fixedOrder.setFixedOrderValue(null);  // Save as null
+                fixedOrderRepository.save(fixedOrder);
+                exam.setFixedOrder(fixedOrder);
+            } else if (exam.getOrderType() == OrderType.RANDOM) {
+                RandomOrder randomOrder = new RandomOrder();
+                randomOrder.setExam(exam);
+                randomOrder.setRandomOrderValue(null);  // Save as null
+                randomOrderRepository.save(randomOrder);
+                exam.setRandomOrder(randomOrder);
+            }
 
             response.setSuccess(true);
             response.setMessage("Exam created successfully");
@@ -75,6 +92,40 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         }
 
     }
+
+    @Override
+    public GenericAddOrUpdateResponse<ExamUpdateRequest> updateExam(long examId, ExamUpdateRequest examUpdateRequest) {
+        GenericAddOrUpdateResponse<ExamUpdateRequest> response = new GenericAddOrUpdateResponse<>();
+
+        // Find the existing exam by ID
+        Exam existingExam = examRepository.findById(examId)
+                .orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
+
+        // Update the exam details
+        existingExam.setTitle(examUpdateRequest.getTitle());
+        existingExam.setDescription(examUpdateRequest.getDescription());
+        existingExam.setInstructions(examUpdateRequest.getInstructions());
+        existingExam.setDuration(examUpdateRequest.getDuration());
+        existingExam.setStartDatetime(examUpdateRequest.getStartDatetime());
+        existingExam.setEndDatetime(examUpdateRequest.getEndDatetime());
+        existingExam.setPrivate(examUpdateRequest.isPrivate());
+
+        // If the organization ID is provided, update the organization
+        if (examUpdateRequest.getOrganizationId() != null) {
+            Organization organization = organizationRepository.findById(examUpdateRequest.getOrganizationId())
+                    .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+            existingExam.setOrganization(organization);
+        }
+
+        // Save the updated exam
+        examRepository.save(existingExam);
+
+        response.setSuccess(true);
+        response.setMessage("Exam updated successfully");
+        response.setId(existingExam.getId());
+        return response;
+    }
+
 
     public GenericAddOrUpdateResponse<MCQRequest> saveMCQ(MCQRequest mcqRequest){
         GenericAddOrUpdateResponse<MCQRequest> response = new GenericAddOrUpdateResponse<>();
@@ -89,13 +140,14 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         MCQ mcq = MCQ.builder()
                 .questionText(mcqRequest.getQuestionText())
                 .exam(exam.get())
+                .difficultyLevel(mcqRequest.getDifficultyLevel().toUpperCase())
                 .isDeleted(false)
                 .build();
 
         Set<MCQOption> options = mcqRequest.getOptions().stream().map(optionRequest -> {
             MCQOption option = MCQOption.builder()
                     .optionText(optionRequest.getOptionText())
-                    .isCorrect(optionRequest.isCorrect())
+                    .correct(optionRequest.isCorrect()) // Convert string to boolean
                     .marks(optionRequest.getMarks()) // Set the marks
                     .build();
             option.setMcqQuestion(mcq); // Set the relationship
@@ -123,6 +175,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
             // Update question text
             mcq.setQuestionText(mcqUpdateRequest.getQuestionText());
+            mcq.setDifficultyLevel(mcqUpdateRequest.getDifficultyLevel().toUpperCase());
 
             // Get the current options
             Set<MCQOption> currentOptions = mcq.getOptions();
@@ -176,6 +229,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         Essay essay = Essay.builder()
                 .questionText(essayRequest.getQuestionText())
                 .exam(exam.get())
+                .difficultyLevel(essayRequest.getDifficultyLevel().toUpperCase())
                 .isDeleted(false)
                 .build();
 
@@ -208,6 +262,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
             // Update the question text
             essay.setQuestionText(essayUpdateRequest.getQuestionText());
+            essay.setDifficultyLevel(essayUpdateRequest.getDifficultyLevel().toUpperCase());
 
             // Clear the current cover points (this removes the old ones)
             Set<EssayCoverPoint> currentCoverPoints = essay.getCoverPoints();
@@ -365,7 +420,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                             .map(option -> MCQOptionResponse.builder()
                                     .optionId(option.getId())
                                     .optionText(option.getOptionText())
-                                    .isCorrect(option.isCorrect())
+                                    .correct(option.isCorrect())
                                     .marks(option.getMarks())
                                     .build())
                             .collect(Collectors.toList());
@@ -435,7 +490,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                         .map(option -> MCQOptionResponse.builder()
                                 .optionId(option.getId())
                                 .optionText(option.getOptionText())
-                                .isCorrect(option.isCorrect())
+                                .correct(option.isCorrect())
                                 .marks(option.getMarks())
                                 .build())
                         .collect(Collectors.toList());
@@ -470,19 +525,6 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     }
 
 
-
-
-
-
-
-
-
-
-    public ResponseEntity<Exam> getExamResponse(long examId){
-        Exam exam = examRepository.findById(examId).orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
-        return ResponseEntity.ok(exam);
-    }
-
     @Override
     @Transactional
     public GenericAddOrUpdateResponse<CandidateEmailListRequest> addCandidatesToExam(long examId, CandidateEmailListRequest request) {
@@ -503,5 +545,147 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         response.setMessage("candidate added successfully");
         return response;
     }
+
+    public ExamResponse getExamById(long examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
+
+        // Build the ExamResponse object
+        ExamResponse examResponse = ExamResponse.builder()
+                .id(exam.getId())
+                .title(exam.getTitle())
+                .description(exam.getDescription())
+                .instructions(exam.getInstructions())
+                .duration(exam.getDuration())
+                .startDatetime(exam.getStartDatetime())
+                .endDatetime(exam.getEndDatetime())
+                .isPrivate(exam.isPrivate())
+
+                // Handle null check for createdBy
+                .createdBy(UserResponse.builder()
+                        .id(exam.getCreatedBy().getId())
+                        .email(exam.getCreatedBy().getEmail())
+                        .build())
+
+                // Handle null check for organization
+                .organization(OrganizationResponse.builder()
+                        .id(exam.getOrganization().getId())
+                        .firstName(exam.getOrganization().getFirstName())
+                        .build())
+
+                // Handle null check for moderator
+                .moderator(Optional.ofNullable(exam.getModerator())
+                        .map(moderator -> ExamSetterResponse.builder()
+                                .id(moderator.getId())
+                                .email(moderator.getEmail())
+                                .firstName(moderator.getFirstName())
+                                .lastName(moderator.getLastName())
+                                .build())
+                        .orElse(null))
+
+                // Handle null check for proctors
+                .proctors(Optional.ofNullable(exam.getProctors())
+                        .map(proctors -> proctors.stream()
+                                .map(proctor -> ExamSetterResponse.builder()
+                                        .id(proctor.getId())
+                                        .email(proctor.getEmail())
+                                        .firstName(proctor.getFirstName())
+                                        .lastName(proctor.getLastName())
+                                        .build())
+                                .collect(Collectors.toSet()))
+                        .orElse(Collections.emptySet())) // Return an empty set if proctors is null
+
+                // Handle null check for candidates
+                .candidates(Optional.ofNullable(exam.getCandidates())
+                        .map(candidates -> candidates.stream()
+                                .map(candidate -> CandidateResponse.builder()
+                                        .id(candidate.getId())
+                                        .email(candidate.getEmail())
+                                        .firstName(candidate.getFirstName())
+                                        .lastName(candidate.getLastName())
+                                        .build())
+                                .collect(Collectors.toSet()))
+                        .orElse(Collections.emptySet())) // Return an empty set if candidates is null
+
+                .orderType(exam.getOrderType())
+
+                .fixedOrder(Optional.ofNullable(exam.getFixedOrder())
+                        .map(fixedOrder -> FixedOrderResponse.builder()
+                                .fixedOrderValue(fixedOrder.getFixedOrderValue())
+                                .build())
+                        .orElse(null))
+
+                .randomOrder(Optional.ofNullable(exam.getRandomOrder())
+                        .map(randomOrder -> RandomOrderResponse.builder()
+                                .randomOrderValue(randomOrder.getRandomOrderValue())
+                                .build())
+                        .orElse(null))
+
+                // Handle question sequence (assuming it's never null)
+                .questionSequence(exam.getQuestionSequence())
+
+                .build();
+
+        return examResponse;
+    }
+
+    @Transactional
+    @Override
+    public GenericAddOrUpdateResponse<OrderChangeRequest> updateOrder(long examId, OrderChangeRequest orderRequest) {
+
+        GenericAddOrUpdateResponse<OrderChangeRequest> response = new GenericAddOrUpdateResponse<>();
+
+        // Find the exam by id
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
+
+        exam.setOrderType(orderRequest.getOrderType());
+        examRepository.save(exam);
+
+        // Determine whether to update FixedOrder or RandomOrder
+        if (orderRequest.getOrderType() == OrderType.FIXED) {
+            // Check if a fixed order exists for this exam
+            FixedOrder fixedOrder = fixedOrderRepository.findByExamId(examId)
+                    .orElseGet(() -> FixedOrder.builder()
+                            .exam(exam)
+                            .fixedOrderValue(null)  // Setting initial value as null
+                            .build());
+
+            // Update or create the fixed order value
+            fixedOrder.setFixedOrderValue(orderRequest.getValue());
+            fixedOrder = fixedOrderRepository.save(fixedOrder);
+
+            response.setSuccess(true);
+            response.setMessage("Fixed order " + (fixedOrder.getId() == null ? "added" : "updated") + " successfully.");
+            response.setId(fixedOrder.getId());
+
+        } else if (orderRequest.getOrderType() == OrderType.RANDOM) {
+            // Check if a random order exists for this exam
+            RandomOrder randomOrder = randomOrderRepository.findByExamId(examId)
+                    .orElseGet(() -> RandomOrder.builder()
+                            .exam(exam)
+                            .randomOrderValue(null)  // Setting initial value as null
+                            .build());
+
+            // Update or create the random order value
+            randomOrder.setRandomOrderValue(orderRequest.getValue());
+            randomOrder = randomOrderRepository.save(randomOrder);
+
+            response.setSuccess(true);
+            response.setMessage("Random order " + (randomOrder.getId() == null ? "added" : "updated") + " successfully.");
+            response.setId(randomOrder.getId());
+
+
+        } else {
+            response.setSuccess(false);
+            response.setMessage("Invalid order type: " + orderRequest.getOrderType());
+            throw new IllegalArgumentException("Invalid order type: " + orderRequest.getOrderType());
+
+        }
+
+        // Return a generic response
+        return response;
+    }
+
 
 }

@@ -4,6 +4,7 @@ import com.testify.Testify_Backend.model.Exam;
 import com.testify.Testify_Backend.requests.exam_management.*;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
 import com.testify.Testify_Backend.responses.exam_management.QuestionListResponse;
 import com.testify.Testify_Backend.responses.exam_management.QuestionResponse;
 import com.testify.Testify_Backend.responses.exam_management.QuestionSequenceResponse;
@@ -26,6 +27,14 @@ public class ExamManagementController {
         }else{
             return ResponseEntity.badRequest().body(response);
         }
+    }
+
+    @PutMapping("/{examId}")
+    public ResponseEntity<GenericAddOrUpdateResponse<ExamUpdateRequest>> updateExam(
+            @PathVariable long examId,
+            @RequestBody ExamUpdateRequest examUpdateRequest) {
+        GenericAddOrUpdateResponse<ExamUpdateRequest> response = examManagementService.updateExam(examId, examUpdateRequest);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{examId}/mcq")
@@ -76,15 +85,22 @@ public class ExamManagementController {
         return examManagementService.getQuestionById(questionId);
     }
 
-    @GetMapping("/{examId}")
-    public ResponseEntity<Exam> getExam(@PathVariable long examId){
-        return examManagementService.getExamResponse(examId);
-    }
-
     @PostMapping("/{examId}/addCandidates")
     public ResponseEntity<GenericAddOrUpdateResponse<CandidateEmailListRequest>> addCandidatesToExam(
             @PathVariable long examId, @RequestBody CandidateEmailListRequest request) {
         GenericAddOrUpdateResponse<CandidateEmailListRequest> response = examManagementService.addCandidatesToExam(examId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ExamResponse> getExamById(@PathVariable("id") long examId) {
+        ExamResponse examResponse = examManagementService.getExamById(examId);
+        return ResponseEntity.ok( examResponse);
+    }
+
+    @PostMapping("/{examId}/order")
+    public ResponseEntity<GenericAddOrUpdateResponse<OrderChangeRequest>> updateOrder(@PathVariable long examId, @RequestBody OrderChangeRequest orderRequest) {
+        GenericAddOrUpdateResponse<OrderChangeRequest> response = examManagementService.updateOrder(examId, orderRequest);
         return ResponseEntity.ok(response);
     }
 
