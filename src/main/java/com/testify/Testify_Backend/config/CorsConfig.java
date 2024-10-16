@@ -14,7 +14,7 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) { // Explicitly mark parameter as non-null
                 registry.addMapping("/**") // You can specify more granular paths instead of /**
-                        .allowedOrigins("http://127.0.0.1:4500/") // URL of the React app
+                        .allowedOrigins("http://127.0.0.1:4500/", "http://localhost:4500") // URL of the React app
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // Allowed HTTP methods
                         .allowedHeaders("*")
                         .allowCredentials(true);

@@ -17,7 +17,6 @@ public class OrganizationGroupResponse {
     private String addressLine2;
     private String city;
     private String state;
-    private String bio;
     private String website;
     private String profileImage;
 }

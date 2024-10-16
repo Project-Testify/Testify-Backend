@@ -87,7 +87,6 @@ public class AuthenticationService {
                         .username(request.getEmail())
                         .password(passwordEncoder.encode(request.getPassword()))
                         .firstName(request.getFirstName())
-                        .bio(request.getBio())
                         .contactNo(request.getContactNo())
                         .addressLine1(request.getAddressLine1())
                         .addressLine2(request.getAddressLine2())
@@ -230,6 +229,9 @@ public class AuthenticationService {
                                 request.getPassword()
                         )
                 );
+//              update last_login
+                userRepository.updateLastLogin(user.getId());
+
                 revokeAllUserTokens(user);
                 var jwtToken = jwtService.generateToken(user);
                 var refreshToken = jwtService.generateRefreshToken(user);

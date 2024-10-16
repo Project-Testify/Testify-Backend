@@ -38,7 +38,6 @@ public class AdminController {
                             org.getAddressLine2(),
                             org.getCity(),
                             org.getState(),
-                            org.getBio(),
                             org.getWebsite(),
                             org.getProfileImage()
                     )

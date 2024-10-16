@@ -24,9 +24,7 @@ public class Organization extends User{
     private String city;
     @Column(nullable = false)
     private String state;
-    private String bio;
     private String website;
-    private String coverImage;
 
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
