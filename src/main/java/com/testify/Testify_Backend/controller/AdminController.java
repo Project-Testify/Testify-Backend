@@ -1,7 +1,9 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.model.Organization;
+import com.testify.Testify_Backend.model.VerificationRequest;
 import com.testify.Testify_Backend.repository.OrganizationRepository;
+import com.testify.Testify_Backend.requests.admin_management.RejectOrganizationRequest;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.admin.OrganizationGroupResponse;
 import com.testify.Testify_Backend.service.AdminService;
@@ -28,24 +30,9 @@ public class AdminController {
     @GetMapping("/getOrganizationRequests")
     public ResponseEntity<List<OrganizationGroupResponse>> getOrganizations() {
             log.info("getOrganizations - start");
-            List<Organization> organizations = adminService.getOrganizationGroup();
+            List<OrganizationGroupResponse> organizations = adminService.getOrganizationGroup();
 
-            List<OrganizationGroupResponse> organizationGroupResponses = organizations.stream().map( org ->
-                    new OrganizationGroupResponse(
-                            org.getId(),
-                            org.getFirstName(),
-                            org.getAddressLine1(),
-                            org.getAddressLine2(),
-                            org.getCity(),
-                            org.getState(),
-                            org.getWebsite(),
-                            org.getProfileImage()
-                    )
-                    ).collect(Collectors.toList());
-
-        log.info("controller : {}", organizationGroupResponses);
-
-        return ResponseEntity.ok(organizationGroupResponses);
+        return ResponseEntity.ok(organizations);
     }
 
     @PatchMapping("/verifyOrganization/{userId}")
@@ -55,10 +42,10 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/rejectOrganization/{userId}")
-    public ResponseEntity rejectOrganization(@PathVariable int userId) {
+    @PatchMapping("/rejectOrganization")
+    public ResponseEntity rejectOrganization(@RequestBody RejectOrganizationRequest rejectOrganizationRequest) {
 
-        int response = adminService.rejectOrganization(userId);
+        int response = adminService.rejectOrganization(rejectOrganizationRequest);
         log.info("controller : {}", response);
 
         return ResponseEntity.ok(response);

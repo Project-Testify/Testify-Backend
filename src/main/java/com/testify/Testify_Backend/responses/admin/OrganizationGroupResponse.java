@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -19,4 +21,17 @@ public class OrganizationGroupResponse {
     private String state;
     private String website;
     private String profileImage;
+
+    private String verificationDocument01Url;
+    private String verificationDocument02Url;
+    private String verificationDocument03Url;
+    private String verificationDocument04Url;
+    private String verificationDocument05Url;
+
+
+    private String verificationStatus;
+    private String rejectionReason;
+    private Date requestDate;
+
+
 }

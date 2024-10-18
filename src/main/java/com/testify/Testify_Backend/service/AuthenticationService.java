@@ -9,7 +9,8 @@ import com.testify.Testify_Backend.responses.auth.RegisterResponse;
 import com.testify.Testify_Backend.enums.TokenType;
 import com.testify.Testify_Backend.enums.UserRole;
 
-import com.testify.Testify_Backend.utils.FileUploadUtil;
+import com.testify.Testify_Backend.utils.FileUtil;
+import jakarta.mail.Multipart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,10 +19,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -107,26 +111,50 @@ public class AuthenticationService {
 
                 //save verification documents
                 if (request.getVerificationDocuments() != null) {
-                    for (var file : request.getVerificationDocuments()) {
-                        try {
-                            String documentUrl = FileUploadUtil.saveFile(file, "verificationDocument");
+                    try {
+                        MultipartFile[] uploadDocuments = request.getVerificationDocuments();
+                        List<String> documentUrls = new ArrayList<>();
 
-                            VerificationRequest uploadedFile = VerificationRequest.builder()
-                                    .verificationDocumentUrl(documentUrl)
-                                    //TODO: add proper verification status
-                                    .verificationStatus("PENDING")
-                                    //Todo: get organization id from logged in user
-                                    .organizationId(savedUser.getId())
-                                    .requestDate(new Date())
-                                    .build();
+                        // Loop through each file and save it
+                        for (MultipartFile file : uploadDocuments) {
+                            if (file.isEmpty() || file.getContentType() == null) {
+                                continue; // Skip empty or invalid files
+                            }
 
-                            verificationRequestRepository.save(uploadedFile);
-
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+                            // Save the file and add the URL to the list
+                            String savedFileUrl = FileUtil.saveFile(file, "verificationDocument");
+                            documentUrls.add(savedFileUrl);
                         }
+
+                        // Use safe access in case there are fewer than 5 files
+                        String document01Url = documentUrls.size() > 0 ? documentUrls.get(0) : null;
+                        String document02Url = documentUrls.size() > 1 ? documentUrls.get(1) : null;
+                        String document03Url = documentUrls.size() > 2 ? documentUrls.get(2) : null;
+                        String document04Url = documentUrls.size() > 3 ? documentUrls.get(3) : null;
+                        String document05Url = documentUrls.size() > 4 ? documentUrls.get(4) : null;
+
+                        // Build the VerificationRequest object
+                        VerificationRequest uploadedFile = VerificationRequest.builder()
+                                .verificationDocument01Url(document01Url)
+                                .verificationDocument02Url(document02Url)
+                                .verificationDocument03Url(document03Url)
+                                .verificationDocument04Url(document04Url)
+                                .verificationDocument05Url(document05Url)
+                                .verificationStatus("PENDING")
+                                .organization(organization) // Assuming savedUser is an Organization object
+                                .requestDate(new Date())
+                                .build();
+
+                        // Save the verification request
+                        verificationRequestRepository.save(uploadedFile);
+
+                    } catch (IOException e) {
+                        // Handle file saving error
+                        e.printStackTrace();
+                        // Optionally, throw a custom exception or handle the error accordingly
                     }
                 }
+
 
             }else if(request.getRole().equals(UserRole.ADMIN)){
                 Admin admin = Admin.builder()
