@@ -1,25 +1,21 @@
 package com.testify.Testify_Backend.requests.exam_management;
 
-
-import com.testify.Testify_Backend.enums.OrderType;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
-@Getter
-@Setter
-@Builder
-public class  ExamRequest {
+@AllArgsConstructor
+public class ExamUpdateRequest {
     private String title;
-    private Long organizationId;
     private String description;
     private String instructions;
     private int duration;
     private LocalDateTime startDatetime;
     private LocalDateTime endDatetime;
     private boolean isPrivate;
-    private OrderType orderType;
-    private Long moderatorId;
+    private Long organizationId;
 }

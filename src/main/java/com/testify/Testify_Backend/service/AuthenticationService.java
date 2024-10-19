@@ -46,6 +46,7 @@ public class AuthenticationService {
     private final VerificationRequestRepository verificationRequestRepository;
     private User user;
 
+
     //TEST UPDATE
     public RegisterResponse register(@ModelAttribute RegistrationRequest request, boolean preVerified) {
 

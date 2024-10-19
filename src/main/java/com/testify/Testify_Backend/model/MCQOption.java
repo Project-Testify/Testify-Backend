@@ -25,7 +25,7 @@ public class MCQOption {
     @JoinColumn(name = "mcq_question_id", nullable = false)
     private MCQ mcqQuestion;
 
-    private boolean isCorrect;
+    private boolean correct;
 
     @Column(nullable = false)
     private double marks = 0;
