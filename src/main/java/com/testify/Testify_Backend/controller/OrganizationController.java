@@ -1,6 +1,7 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.model.CandidateGroup;
+import com.testify.Testify_Backend.model.Exam;
 import com.testify.Testify_Backend.model.ExamSetter;
 import com.testify.Testify_Backend.model.ExamSetterInvitation;
 import com.testify.Testify_Backend.requests.VerificationRequestRequest;
@@ -12,8 +13,11 @@ import com.testify.Testify_Backend.responses.CandidateGroupResponse;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
 import com.testify.Testify_Backend.responses.courseModule.CourseModuleResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
+import com.testify.Testify_Backend.service.ExamManagementService;
 import com.testify.Testify_Backend.service.OrganizationService;
 import com.testify.Testify_Backend.service.OrganizationServiceImpl;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,6 +123,12 @@ public class OrganizationController {
     public ResponseEntity<Set<ExamSetterInvitation>> getExamSetterInvitations(@PathVariable long organizationId){
         Set<ExamSetterInvitation> invitations = organizationService.getExamSetterInvitations(organizationId);
         return ResponseEntity.ok(invitations);
+    }
+
+    @GetMapping("/{organizationId}/exams")
+    public ResponseEntity<Set<ExamResponse>> getExams(@PathVariable long organizationId){
+        Set<ExamResponse> exams = organizationService.getExams(organizationId);
+        return ResponseEntity.ok(exams);
     }
 
 }
