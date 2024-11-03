@@ -33,7 +33,12 @@ public class Exam {
     @ManyToOne
     private Organization organization;
 
+    @Lob //Specifies that the column should be capable of storing large objects, allowing TEXT types in the database.
+    @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String instructions;
     private int duration;
 

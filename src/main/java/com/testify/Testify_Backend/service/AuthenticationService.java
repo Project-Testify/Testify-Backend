@@ -23,9 +23,15 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
 import java.util.UUID;
 
 @Slf4j
@@ -43,7 +49,11 @@ public class AuthenticationService {
     private final CandidateRepository attendeeRepository;
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
+
+    private final ExamSetterInvitationRepository examSetterInvitationRepository;
+
     private final VerificationRequestRepository verificationRequestRepository;
+
     private User user;
 
 
@@ -76,6 +86,8 @@ public class AuthenticationService {
                         .build();
                 savedUser = attendeeRepository.save(candidate);
             }else if(request.getRole().equals(UserRole.EXAMSETTER)){
+                Optional<ExamSetterInvitation> examSetterInvitation = examSetterInvitationRepository.findByToken(request.getToken());
+                Organization organization = examSetterInvitation.get().getOrganization();
                 ExamSetter examSetter = ExamSetter.builder()
                         .email(request.getEmail())
                         .username(request.getEmail())
@@ -88,8 +100,20 @@ public class AuthenticationService {
                         .enabled(false)
                         .locked(false)
                         .verified(true)
+                        .organizations(new HashSet<>())
                         .build();
+                examSetter.getOrganizations().add(organization);
                 savedUser = examSetterRepository.save(examSetter);
+                if (!organization.getExamSetters().contains(examSetter)) {
+                    organization.getExamSetters().add(examSetter);
+                    organizationRepository.save(organization);
+                }
+
+                // Mark the invitation as accepted
+                examSetterInvitation.ifPresent(invitation -> {
+                    invitation.setAccepted(true);
+                    examSetterInvitationRepository.save(invitation);
+                });
             } else if (request.getRole().equals(UserRole.ORGANIZATION)) {
                 System.out.println("Organization");
                 Organization organization = Organization.builder()
