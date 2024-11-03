@@ -404,8 +404,8 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
             // Check if questions are found
             if (questions.isEmpty()) {
-                response.setErrorMessage("No questions found for exam ID: " + examId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+                // Return null instead of an error message
+                return ResponseEntity.ok(null); // Return 200 OK with null body
             }
 
             for (Question question : questions) {
@@ -464,6 +464,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);  // Return 500 Internal Server Error
         }
     }
+
 
 
 

@@ -11,9 +11,13 @@ import com.testify.Testify_Backend.responses.CandidateGroupResponse;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
 import com.testify.Testify_Backend.responses.courseModule.CourseModuleResponse;
+
 import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
 import com.testify.Testify_Backend.utils.FileUploadUtil;
 import jakarta.transaction.Transactional;
+
+import com.testify.Testify_Backend.utils.FileUtil;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -121,27 +125,27 @@ public class OrganizationServiceImpl implements OrganizationService{
     }
 
 
-    public GenericAddOrUpdateResponse<VerificationRequestRequest> requestVerification(VerificationRequestRequest verificationRequest) throws IOException {
-        GenericAddOrUpdateResponse<VerificationRequestRequest> response = new GenericAddOrUpdateResponse<>();
-        MultipartFile document = verificationRequest.getVerificationDocument();
-
-        String documentUrl = FileUploadUtil.saveFile(document, "verificationDocument");
-
-        VerificationRequest verification = VerificationRequest.builder()
-                .verificationDocumentUrl(documentUrl)
-                //TODO: add proper verification status
-                .verificationStatus("PENDING")
-                //Todo: get organization id from logged in user
-                .organizationId(1)
-                .requestDate(new Date())
-                .build();
-
-        verificationRequestRepository.save(verification);
-
-        response.setSuccess(true);
-        response.setMessage("Verification request sent successfully");
-        return response;
-    }
+//    public GenericAddOrUpdateResponse<VerificationRequestRequest> requestVerification(VerificationRequestRequest verificationRequest) throws IOException {
+//        GenericAddOrUpdateResponse<VerificationRequestRequest> response = new GenericAddOrUpdateResponse<>();
+//        MultipartFile document = verificationRequest.getVerificationDocument();
+//
+//        String documentUrl = FileUtil.saveFile(document, "verificationDocument");
+//
+//        VerificationRequest verification = VerificationRequest.builder()
+//                .verificationDocumentUrl(documentUrl)
+//                //TODO: add proper verification status
+//                .verificationStatus("PENDING")
+//                //Todo: get organization id from logged in user
+//                .organizationId(1)
+//                .requestDate(new Date())
+//                .build();
+//
+//        verificationRequestRepository.save(verification);
+//
+//        response.setSuccess(true);
+//        response.setMessage("Verification request sent successfully");
+//        return response;
+//    }
 
     public GenericAddOrUpdateResponse<CourseModule> addCourseModuleToOrganization(long organizationId, CourseModuleRequest courseModuleRequest) {
         Organization organization = organizationRepository.findById(organizationId).orElseThrow(() -> new RuntimeException("Organization not found"));
@@ -320,6 +324,8 @@ public class OrganizationServiceImpl implements OrganizationService{
         examSetterInvitationRepository.save(invitation);
         return "Invitation accepted";
     }
+
+
 
 
 }

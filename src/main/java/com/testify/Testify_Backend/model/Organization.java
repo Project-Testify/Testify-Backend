@@ -14,6 +14,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Table(name = "organization")
 @PrimaryKeyJoinColumn(name = "id")
+@ToString(callSuper = true)
 public class Organization extends User{
     @Column(nullable = false)
     private String firstName;
@@ -23,9 +24,7 @@ public class Organization extends User{
     private String city;
     @Column(nullable = false)
     private String state;
-    private String bio;
     private String website;
-    private String coverImage;
 
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(

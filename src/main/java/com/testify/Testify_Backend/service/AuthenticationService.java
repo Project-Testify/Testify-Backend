@@ -9,6 +9,8 @@ import com.testify.Testify_Backend.responses.auth.RegisterResponse;
 import com.testify.Testify_Backend.enums.TokenType;
 import com.testify.Testify_Backend.enums.UserRole;
 
+import com.testify.Testify_Backend.utils.FileUtil;
+import jakarta.mail.Multipart;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,11 +19,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import java.util.UUID;
 
 @Slf4j
@@ -39,7 +49,11 @@ public class AuthenticationService {
     private final CandidateRepository attendeeRepository;
     private final ExamSetterRepository examSetterRepository;
     private final OrganizationRepository organizationRepository;
+
     private final ExamSetterInvitationRepository examSetterInvitationRepository;
+
+    private final VerificationRequestRepository verificationRequestRepository;
+
     private User user;
 
 
@@ -47,6 +61,7 @@ public class AuthenticationService {
     public RegisterResponse register(@ModelAttribute RegistrationRequest request, boolean preVerified) {
 
         var response = new RegisterResponse();
+        System.out.println("Registration request: " + request);
 
         if (userService.findByEmail(request.getEmail()).isPresent()) {
             response.addError("email", "Email is already taken");
@@ -100,12 +115,12 @@ public class AuthenticationService {
                     examSetterInvitationRepository.save(invitation);
                 });
             } else if (request.getRole().equals(UserRole.ORGANIZATION)) {
+                System.out.println("Organization");
                 Organization organization = Organization.builder()
                         .email(request.getEmail())
                         .username(request.getEmail())
                         .password(passwordEncoder.encode(request.getPassword()))
                         .firstName(request.getFirstName())
-                        .bio(request.getBio())
                         .contactNo(request.getContactNo())
                         .addressLine1(request.getAddressLine1())
                         .addressLine2(request.getAddressLine2())
@@ -118,7 +133,54 @@ public class AuthenticationService {
                         .verified(false)
                         .build();
                 savedUser = organizationRepository.save(organization);
-                
+
+                //save verification documents
+                if (request.getVerificationDocuments() != null) {
+                    try {
+                        MultipartFile[] uploadDocuments = request.getVerificationDocuments();
+                        List<String> documentUrls = new ArrayList<>();
+
+                        // Loop through each file and save it
+                        for (MultipartFile file : uploadDocuments) {
+                            if (file.isEmpty() || file.getContentType() == null) {
+                                continue; // Skip empty or invalid files
+                            }
+
+                            // Save the file and add the URL to the list
+                            String savedFileUrl = FileUtil.saveFile(file, "verificationDocument");
+                            documentUrls.add(savedFileUrl);
+                        }
+
+                        // Use safe access in case there are fewer than 5 files
+                        String document01Url = documentUrls.size() > 0 ? documentUrls.get(0) : null;
+                        String document02Url = documentUrls.size() > 1 ? documentUrls.get(1) : null;
+                        String document03Url = documentUrls.size() > 2 ? documentUrls.get(2) : null;
+                        String document04Url = documentUrls.size() > 3 ? documentUrls.get(3) : null;
+                        String document05Url = documentUrls.size() > 4 ? documentUrls.get(4) : null;
+
+                        // Build the VerificationRequest object
+                        VerificationRequest uploadedFile = VerificationRequest.builder()
+                                .verificationDocument01Url(document01Url)
+                                .verificationDocument02Url(document02Url)
+                                .verificationDocument03Url(document03Url)
+                                .verificationDocument04Url(document04Url)
+                                .verificationDocument05Url(document05Url)
+                                .verificationStatus("PENDING")
+                                .organization(organization) // Assuming savedUser is an Organization object
+                                .requestDate(new Date())
+                                .build();
+
+                        // Save the verification request
+                        verificationRequestRepository.save(uploadedFile);
+
+                    } catch (IOException e) {
+                        // Handle file saving error
+                        e.printStackTrace();
+                        // Optionally, throw a custom exception or handle the error accordingly
+                    }
+                }
+
+
             }else if(request.getRole().equals(UserRole.ADMIN)){
                 Admin admin = Admin.builder()
                         .email(request.getEmail())
@@ -134,6 +196,8 @@ public class AuthenticationService {
                         .build();
                 savedUser = userRepository.save(admin);
             }
+
+
 
 
             //TODO: Send confirmation token
@@ -248,6 +312,9 @@ public class AuthenticationService {
                                 request.getPassword()
                         )
                 );
+//              update last_login
+                userRepository.updateLastLogin(user.getId());
+
                 revokeAllUserTokens(user);
                 var jwtToken = jwtService.generateToken(user);
                 var refreshToken = jwtService.generateRefreshToken(user);
@@ -259,7 +326,7 @@ public class AuthenticationService {
                 response.setEmail(user.getEmail());
                 response.setUserName(user.getUsername());
                 response.setRole(user.getRole());
-                response.setFirstName(user instanceof Candidate ? ((Candidate) user).getFirstName() : user instanceof Organization ? ((Organization) user).getFirstName() : null);
+                response.setFirstName(user instanceof Candidate ? ((Candidate) user).getFirstName() : user instanceof Organization ? ((Organization) user).getFirstName() : ( user instanceof Admin ? ((Admin) user).getFirstName() : null ));
                 response.setLastName(user instanceof Candidate ? ((Candidate) user).getLastName() : null);
 
             } catch (Exception e) {

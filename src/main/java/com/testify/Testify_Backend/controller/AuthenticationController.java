@@ -6,6 +6,7 @@ import com.testify.Testify_Backend.requests.auth.RegistrationRequest;
 import com.testify.Testify_Backend.responses.auth.RegisterResponse;
 import com.testify.Testify_Backend.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +19,18 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@RequestBody RegistrationRequest request){
+        //print request
+        System.out.println(request);
+        RegisterResponse response = authService.register(request, false);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @PostMapping(value = "/registerOrg", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RegisterResponse> registerOrg(@ModelAttribute RegistrationRequest request){
         //print request
         System.out.println(request);
         RegisterResponse response = authService.register(request, false);
