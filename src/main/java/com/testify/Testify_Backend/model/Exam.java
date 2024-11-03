@@ -82,4 +82,7 @@ public class Exam {
     @Convert(converter = QuestionSequenceConverter.class)
     private List<Long> questionSequence;
 
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
+    private List<Grade> gradings;
+
 }
