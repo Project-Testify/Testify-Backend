@@ -1,19 +1,28 @@
 package com.testify.Testify_Backend.service;
 
+import com.testify.Testify_Backend.enums.ExamStatus;
 import com.testify.Testify_Backend.model.Candidate;
+import com.testify.Testify_Backend.model.Exam;
 import com.testify.Testify_Backend.repository.CandidateRepository;
+import com.testify.Testify_Backend.repository.ExamRepository;
+import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateProfile;
 import com.testify.Testify_Backend.utils.UserUtil;
 import com.testify.Testify_Backend.utils.VarList;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -21,16 +30,58 @@ import java.util.Optional;
 @Transactional
 public class CandidateServiceImpl implements CandidateService {
 
+    @Autowired
     private final CandidateRepository candidateRepository;
+
+    @Autowired
     private final ModelMapper modelMapper;
+
+    @Autowired
+    private final ExamRepository examRepository;
+    @Autowired
+    private GenericResponse genericResponse;
 
     @Override
     public List<CandidateExam> getCandidateExams(){
 //        String currentUserEmail = UserUtil.getCurrentUserName();
-        String currentUserEmail = "john.doe@example.com";
-        Candidate candidate = candidateRepository.findByEmail(currentUserEmail).get();
+        String currentUserEmail = "testcan@gmail.com";
+        Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Candidate not found"));
 
-        return candidate.getExams().stream().map(exam -> modelMapper.map(exam, CandidateExam.class)).toList();
+        // Get exams directly associated with the candidate
+        List<Exam> candidateExams = examRepository.findExamsByCandidateId(candidate.getId());
+
+        // Get all public exams
+        List<Exam> publicExams = examRepository.findAllPublicExams();
+
+        // Combine both lists, ensuring no duplicates
+        Set<Exam> allExams = new HashSet<>(candidateExams);
+        allExams.addAll(publicExams);
+
+        if(allExams.isEmpty()){
+            return null;
+
+        }else{
+            // Map to DTO (CandidateExam) and set status based on timing
+            return allExams.stream()
+                    .map(exam -> {
+                        CandidateExam candidateExam = modelMapper.map(exam, CandidateExam.class);
+
+                        // Determine status based on start and end datetime
+                        LocalDateTime now = LocalDateTime.now();
+                        if (now.isBefore(exam.getStartDatetime())) {
+                            candidateExam.setStatus(ExamStatus.UPCOMING);
+                        } else if (now.isAfter(exam.getEndDatetime())) {
+                            candidateExam.setStatus(ExamStatus.EXPIRED);
+                        } else {
+                            candidateExam.setStatus(ExamStatus.ONGOING);
+                        }
+
+                        return candidateExam;
+                    })
+                    .toList();
+        }
+
     }
 
     @Override
