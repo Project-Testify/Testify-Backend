@@ -129,37 +129,44 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
     public GenericAddOrUpdateResponse<MCQRequest> saveMCQ(MCQRequest mcqRequest){
         GenericAddOrUpdateResponse<MCQRequest> response = new GenericAddOrUpdateResponse<>();
-        Optional<Exam> exam = examRepository.findById(mcqRequest.getExamId());
+        try{
+            Optional<Exam> exam = examRepository.findById(mcqRequest.getExamId());
 
-        if (exam.isEmpty()) {
-            response.setSuccess(false);
-            response.setMessage("Exam not found");
-            return response;
-        }
+            if (exam.isEmpty()) {
+                response.setSuccess(false);
+                response.setMessage("Exam not found");
+                return response;
+            }
 
-        MCQ mcq = MCQ.builder()
-                .questionText(mcqRequest.getQuestionText())
-                .exam(exam.get())
-                .difficultyLevel(mcqRequest.getDifficultyLevel().toUpperCase())
-                .isDeleted(false)
-                .build();
-
-        Set<MCQOption> options = mcqRequest.getOptions().stream().map(optionRequest -> {
-            MCQOption option = MCQOption.builder()
-                    .optionText(optionRequest.getOptionText())
-                    .correct(optionRequest.isCorrect()) // Convert string to boolean
-                    .marks(optionRequest.getMarks()) // Set the marks
+            MCQ mcq = MCQ.builder()
+                    .questionText(mcqRequest.getQuestionText())
+                    .exam(exam.get())
+                    .difficultyLevel(mcqRequest.getDifficultyLevel().toUpperCase())
+                    .isDeleted(false)
                     .build();
-            option.setMcqQuestion(mcq); // Set the relationship
-            return option;
-        }).collect(Collectors.toSet());
 
-        mcq.setOptions(options); // Set options to mcq
-        mcqQuestionRepository.save(mcq); // Save the question
+            Set<MCQOption> options = mcqRequest.getOptions().stream().map(optionRequest -> {
+                MCQOption option = MCQOption.builder()
+                        .optionText(optionRequest.getOptionText())
+                        .correct(optionRequest.isCorrect()) // Convert string to boolean
+                        .marks(optionRequest.getMarks()) // Set the marks
+                        .build();
+                option.setMcqQuestion(mcq); // Set the relationship
+                return option;
+            }).collect(Collectors.toSet());
 
-        response.setSuccess(true);
-        response.setId(mcq.getId());
-        response.setMessage("MCQ added successfully");
+            mcq.setOptions(options); // Set options to mcq
+            mcqQuestionRepository.save(mcq); // Save the question
+
+            response.setSuccess(true);
+            response.setId(mcq.getId());
+            response.setMessage("MCQ added successfully");
+
+        } catch (Exception e) {
+            // Handle case where MCQ is not found
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+        }
         return response;
     
     }
