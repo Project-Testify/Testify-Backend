@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.responses.candidate_management;
 
+import com.testify.Testify_Backend.enums.ExamStatus;
 import com.testify.Testify_Backend.model.Organization;
 import com.testify.Testify_Backend.responses.OrgResponse;
 import lombok.Data;
@@ -15,4 +16,5 @@ public class CandidateExam {
     private String instructions;
     private int totalMarks;
     private OrgResponse organization;
+    private ExamStatus status;
 }

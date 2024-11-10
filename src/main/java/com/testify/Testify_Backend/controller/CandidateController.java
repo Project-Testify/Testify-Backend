@@ -21,7 +21,7 @@ import java.util.List;
 public class CandidateController {
     private final CandidateService candidateService;
 
-    @GetMapping("/candidateExams")
+    @GetMapping("/exams")
     public ResponseEntity<List<CandidateExam>> getCandidateExams() {
         List<CandidateExam> candidateExams = candidateService.getCandidateExams();
         return ResponseEntity.ok(candidateExams);
