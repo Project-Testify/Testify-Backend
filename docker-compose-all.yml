@@ -1,0 +1,68 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:16
+    container_name: testify-postgres
+    hostname: testify-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: testify
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+        - testify-network
+
+  bff:
+    container_name: testify-api
+    hostname: testify
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "4501:4501"
+    environment:
+      - SERVER_PORT
+      - SPRING_APPLICATION_NAME
+
+
+
+      - SPRING_APPLICATION_SECURITY_JWT_SECRET_KEY
+      - SPRING_APPLICATION_SECURITY_JWT_EXPIRATION
+      - SPRING_APPLICATION_SECURITY_JWT_REFRESH_TOKEN_EXPIRATION
+
+      - SPRING_MAIL_HOST
+      - SPRING_MAIL_PORT
+      - SPRING_MAIL_USERNAME
+      - SPRING_MAIL_PASSWORD
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_CONNECTIONTIMEOUT
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_TIMEOUT
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_WRITETIMEOUT
+
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://testify-postgres:5432/testify
+      - SPRING_DATASOURCE_USERNAME
+      - SPRING_DATASOURCE_PASSWORD
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME
+        # Hibernate and JPA setting
+      - SPRING_JPA_HIBERNATE_DDL_AUTO
+      - SPRING_JPA_SHOW_SQL
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+
+
+    command: mvn spring-boot:run
+    networks:
+      - testify-network
+
+
+
+volumes:
+  postgres_data:
+
+networks:
+    testify-network:
+        driver: bridge
