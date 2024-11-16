@@ -1,5 +1,5 @@
 # Use OpenJDK version 22 as a base image (change to the actual JDK 22 image if available)
-FROM maven:3.9.9-eclipse-temurin-22-alpine
+FROM maven:3.9.9-eclipse-temurin-21-alpine
 
 # Set the working directory in the container
 WORKDIR /app
@@ -12,7 +12,7 @@ RUN mvn dependency:go-offline
 
 # Copy the application source code to the container (this will be overridden by volume in dev)
 COPY src /app/src
-COPY .env /app/.env
+# COPY .env /app/.env
 
 # Expose the port Spring Boot will run on
 EXPOSE 4501
