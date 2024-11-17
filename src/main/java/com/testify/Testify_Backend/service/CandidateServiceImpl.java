@@ -19,10 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,8 +40,8 @@ public class CandidateServiceImpl implements CandidateService {
     private GenericResponse genericResponse;
 
     @Override
-    public List<CandidateExam> getCandidateExams(){
-//        String currentUserEmail = UserUtil.getCurrentUserName();
+    public List<CandidateExam> getCandidateExams(String status) {
+        // Get the current user's email (you can adapt this to your actual method of getting the logged-in user's email)
         String currentUserEmail = "testcan@gmail.com";
         Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Candidate not found"));
@@ -58,17 +56,16 @@ public class CandidateServiceImpl implements CandidateService {
         Set<Exam> allExams = new HashSet<>(candidateExams);
         allExams.addAll(publicExams);
 
-        if(allExams.isEmpty()){
-            return null;
+        if (allExams.isEmpty()) {
+            return new ArrayList<>();
+        } else {
+            LocalDateTime now = LocalDateTime.now();
 
-        }else{
-            // Map to DTO (CandidateExam) and set status based on timing
+            // Filter exams based on the provided status
             return allExams.stream()
                     .map(exam -> {
                         CandidateExam candidateExam = modelMapper.map(exam, CandidateExam.class);
 
-                        // Determine status based on start and end datetime
-                        LocalDateTime now = LocalDateTime.now();
                         if (now.isBefore(exam.getStartDatetime())) {
                             candidateExam.setStatus(ExamStatus.UPCOMING);
                         } else if (now.isAfter(exam.getEndDatetime())) {
@@ -79,10 +76,17 @@ public class CandidateServiceImpl implements CandidateService {
 
                         return candidateExam;
                     })
-                    .toList();
+                    .filter(candidateExam -> {
+                        // Apply the status filter
+                        if (status == null) {
+                            return true;
+                        }
+                        return candidateExam.getStatus().name().equalsIgnoreCase(status);
+                    })
+                    .collect(Collectors.toList());
         }
-
     }
+
 
     @Override
     public CandidateProfile getCandidateProfile(){

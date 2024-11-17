@@ -22,10 +22,16 @@ public class CandidateController {
     private final CandidateService candidateService;
 
     @GetMapping("/exams")
-    public ResponseEntity<List<CandidateExam>> getCandidateExams() {
-        List<CandidateExam> candidateExams = candidateService.getCandidateExams();
+    public ResponseEntity<List<CandidateExam>> getCandidateExams(@RequestParam(value = "status", required = false) String status) {
+        List<CandidateExam> candidateExams;
+        if (status != null) {
+            candidateExams = candidateService.getCandidateExams(status);
+        } else {
+            candidateExams = candidateService.getCandidateExams(null);
+        }
         return ResponseEntity.ok(candidateExams);
     }
+
 
     @GetMapping("/profile")
     public ResponseEntity<CandidateProfile> getCandidateProfile() {
