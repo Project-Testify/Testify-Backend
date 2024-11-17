@@ -7,7 +7,7 @@ import com.testify.Testify_Backend.responses.candidate_management.CandidateProfi
 import java.util.List;
 
 public interface CandidateService {
-    public List<CandidateExam> getCandidateExams();
+    public List<CandidateExam> getCandidateExams(String status);
     public CandidateProfile getCandidateProfile();
     public String updateCandidateProfile(Candidate candidate);
     public String deleteCandidateProfile(long id);
