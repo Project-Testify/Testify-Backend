@@ -1,10 +1,12 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.model.Candidate;
+import com.testify.Testify_Backend.model.Organization;
 import com.testify.Testify_Backend.repository.CandidateRepository;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateProfile;
+import com.testify.Testify_Backend.responses.candidate_management.OrganizationCandidateView;
 import com.testify.Testify_Backend.service.CandidateService;
 import com.testify.Testify_Backend.utils.VarList;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,12 @@ public class CandidateController {
         return ResponseEntity.ok(candidateExams);
     }
 
+    @GetMapping("/organizations")
+    public ResponseEntity<List<OrganizationCandidateView>> getOrganizations(){
+        List<OrganizationCandidateView> organizations;
+        organizations = candidateService.getOrganizations();
+        return ResponseEntity.ok(organizations);
+    }
 
     @GetMapping("/profile")
     public ResponseEntity<CandidateProfile> getCandidateProfile() {

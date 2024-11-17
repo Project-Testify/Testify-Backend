@@ -3,12 +3,15 @@ package com.testify.Testify_Backend.service;
 import com.testify.Testify_Backend.enums.ExamStatus;
 import com.testify.Testify_Backend.model.Candidate;
 import com.testify.Testify_Backend.model.Exam;
+import com.testify.Testify_Backend.model.Organization;
 import com.testify.Testify_Backend.repository.CandidateRepository;
 import com.testify.Testify_Backend.repository.ExamRepository;
+import com.testify.Testify_Backend.repository.OrganizationRepository;
+import com.testify.Testify_Backend.repository.UserRepository;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateProfile;
-import com.testify.Testify_Backend.utils.UserUtil;
+import com.testify.Testify_Backend.responses.candidate_management.OrganizationCandidateView;
 import com.testify.Testify_Backend.utils.VarList;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -36,6 +39,13 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Autowired
     private final ExamRepository examRepository;
+
+    @Autowired
+    private final OrganizationRepository organizationRepository;
+
+    @Autowired
+    private final UserRepository userRepository;
+
     @Autowired
     private GenericResponse genericResponse;
 
@@ -85,6 +95,37 @@ public class CandidateServiceImpl implements CandidateService {
                     })
                     .collect(Collectors.toList());
         }
+
+    }
+
+    @Override
+    public List<OrganizationCandidateView> getOrganizations() {
+        List<Organization> organizations = organizationRepository.findAll();
+
+        return organizations.stream()
+                .map(org -> {
+                    // Check verification status in the _user table
+                    boolean isVerified = userRepository.existsByEmailAndVerified(org.getEmail(), true);
+
+                    String contactNumber = userRepository.findContactByEmail(org.getEmail()).orElse("N/A");
+
+                    // Map to OrganizationCandidateView
+                    OrganizationCandidateView view = new OrganizationCandidateView();
+                    view.setEmail(org.getEmail());
+                    view.setFirstName(org.getFirstName());
+                    view.setAddressLine1(org.getAddressLine1());
+                    view.setAddressLine2(org.getAddressLine2());
+                    view.setCity(org.getCity());
+                    view.setState(org.getState());
+                    view.setWebsite(org.getWebsite());
+
+                    // Set verified status (add a custom setter or handle separately if needed)
+                    view.setVerified(isVerified);
+                    view.setContact(contactNumber);
+
+                    return view;
+                })
+                .toList();
     }
 
 
