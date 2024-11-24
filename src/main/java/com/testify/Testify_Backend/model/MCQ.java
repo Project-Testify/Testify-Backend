@@ -17,7 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @DiscriminatorValue("MCQ")
 public class MCQ extends Question {
-    @OneToMany(mappedBy = "mcqQuestion", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "mcqQuestion", cascade = CascadeType.ALL , orphanRemoval = true)
     private Set<MCQOption> options;
 }
 

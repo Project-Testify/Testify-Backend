@@ -5,5 +5,4 @@ public enum UserRole {
     EXAMSETTER,
     ADMIN,
     ORGANIZATION
-
 }

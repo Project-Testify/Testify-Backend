@@ -7,13 +7,19 @@ import com.testify.Testify_Backend.requests.organization_management.AddExamSette
 import com.testify.Testify_Backend.requests.organization_management.CandidateGroupRequest;
 import com.testify.Testify_Backend.requests.organization_management.CourseModuleRequest;
 import com.testify.Testify_Backend.requests.organization_management.InviteExamSetterRequest;
+import com.testify.Testify_Backend.responses.CandidateGroupResponse;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
 import com.testify.Testify_Backend.responses.courseModule.CourseModuleResponse;
-import com.testify.Testify_Backend.utils.FileUploadUtil;
+
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
+import com.testify.Testify_Backend.utils.FileUtil;
+import jakarta.transaction.Transactional;
+
+import com.testify.Testify_Backend.utils.FileUtil;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.antlr.v4.runtime.misc.LogManager;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -39,6 +45,7 @@ public class OrganizationServiceImpl implements OrganizationService{
     private final CandidateGroupRepository candidateGroupRepository;
     private final PasswordEncoder passwordEncoder;
     private final ExamSetterInvitationRepository examSetterInvitationRepository;
+    private final ExamRepository examRepository;
     private final EmailSender emailSender;
 
     @Autowired
@@ -117,36 +124,28 @@ public class OrganizationServiceImpl implements OrganizationService{
         return response;
     }
 
-    public Set<ExamSetter> getSetterFromOrganization(long organizationId) {
-        Organization organization = organizationRepository.findById(organizationId).get();
-        Set<ExamSetter> examSetters = organization.getExamSetters();
 
-        return examSetters;
-    }
-
-
-
-    public GenericAddOrUpdateResponse<VerificationRequestRequest> requestVerification(VerificationRequestRequest verificationRequest) throws IOException {
-        GenericAddOrUpdateResponse<VerificationRequestRequest> response = new GenericAddOrUpdateResponse<>();
-        MultipartFile document = verificationRequest.getVerificationDocument();
-
-        String documentUrl = FileUploadUtil.saveFile(document, "verificationDocument");
-
-        VerificationRequest verification = VerificationRequest.builder()
-                .verificationDocumentUrl(documentUrl)
-                //TODO: add proper verification status
-                .verificationStatus("PENDING")
-                //Todo: get organization id from logged in user
-                .organizationId(1)
-                .requestDate(new Date())
-                .build();
-
-        verificationRequestRepository.save(verification);
-
-        response.setSuccess(true);
-        response.setMessage("Verification request sent successfully");
-        return response;
-    }
+//    public GenericAddOrUpdateResponse<VerificationRequestRequest> requestVerification(VerificationRequestRequest verificationRequest) throws IOException {
+//        GenericAddOrUpdateResponse<VerificationRequestRequest> response = new GenericAddOrUpdateResponse<>();
+//        MultipartFile document = verificationRequest.getVerificationDocument();
+//
+//        String documentUrl = FileUtil.saveFile(document, "verificationDocument");
+//
+//        VerificationRequest verification = VerificationRequest.builder()
+//                .verificationDocumentUrl(documentUrl)
+//                //TODO: add proper verification status
+//                .verificationStatus("PENDING")
+//                //Todo: get organization id from logged in user
+//                .organizationId(1)
+//                .requestDate(new Date())
+//                .build();
+//
+//        verificationRequestRepository.save(verification);
+//
+//        response.setSuccess(true);
+//        response.setMessage("Verification request sent successfully");
+//        return response;
+//    }
 
     public GenericAddOrUpdateResponse<CourseModule> addCourseModuleToOrganization(long organizationId, CourseModuleRequest courseModuleRequest) {
         Organization organization = organizationRepository.findById(organizationId).orElseThrow(() -> new RuntimeException("Organization not found"));
@@ -182,10 +181,7 @@ public class OrganizationServiceImpl implements OrganizationService{
         Organization organization = organizationRepository.findById(organizationId).orElseThrow(() -> new IllegalArgumentException("Organization not found"));
 
         Set<Candidate> candidates = new HashSet<>();
-        if (candidateGroupRequest.getCandidateIds() != null) {
-            List<Candidate> foundCandidates = candidateRepository.findAllById(candidateGroupRequest.getCandidateIds());
-            candidates.addAll(foundCandidates);
-        }
+        candidates = candidateRepository.findAllByEmailIn(candidateGroupRequest.getEmails());
 
         CandidateGroup candidateGroup = CandidateGroup.builder()
                 .name(candidateGroupRequest.getName())
@@ -200,6 +196,83 @@ public class OrganizationServiceImpl implements OrganizationService{
         return response;
     }
 
+
+    public Set<CandidateGroupResponse> getCandidateGroupsByOrganization(Long organizationId) {
+        Set<CandidateGroupResponse> candidateGroupsResponse = new HashSet<>();
+        Set<CandidateGroup> candidateGroups = new HashSet<>();
+        Organization organization = organizationRepository.findById(organizationId).orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+
+        candidateGroups = candidateGroupRepository.findByOrganizationId(organizationId);
+
+        return candidateGroups.stream().map(candidateGroup -> modelMapper.map(candidateGroup, CandidateGroupResponse.class)).collect(Collectors.toSet());
+    }
+
+    @Override
+    public GenericAddOrUpdateResponse addCandidateToGroup(long groupId, String name, String email) {
+        GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse<>();
+        CandidateGroup candidateGroup = candidateGroupRepository.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Group not found"));
+        Candidate candidate = candidateRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Candidate not found"));
+        candidateGroup.getCandidates().add(candidate);
+        candidateGroupRepository.save(candidateGroup);
+        response.setSuccess(true);
+        response.setMessage("Candidate added successfully");
+        response.setId(candidate.getId());
+        return response;
+    }
+
+    @Override
+    public GenericDeleteResponse deleteGroup(long groupId) {
+        CandidateGroup candidateGroup = candidateGroupRepository.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Group not found"));
+        candidateGroupRepository.delete(candidateGroup);
+        GenericDeleteResponse response = new GenericDeleteResponse();
+        response.setSuccess(true);
+        response.setMessage("Candidate group deleted successfully");
+        return response;
+    }
+
+    @Override
+    public GenericDeleteResponse deleteCandidate(long groupId, long candidateId) {
+        CandidateGroup candidateGroup = candidateGroupRepository.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Group not found"));
+        candidateGroup.getCandidates().removeIf(candidate -> candidate.getId() == candidateId);
+        candidateGroupRepository.save(candidateGroup);
+        GenericDeleteResponse response = new GenericDeleteResponse();
+        response.setSuccess(true);
+        response.setMessage("Candidate group deleted successfully");
+        return response;
+    }
+
+    @Override
+    public GenericAddOrUpdateResponse updateCandidateGroup(long groupId, String groupName) {
+        CandidateGroup candidateGroup = candidateGroupRepository.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Group not found"));
+        candidateGroup.setName(groupName);
+        candidateGroupRepository.save(candidateGroup);
+        GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
+        response.setSuccess(true);
+        response.setMessage("Candidate group updated successfully");
+        return response;
+    }
+
+    @Override
+    public Set<ExamSetter> getExamSetters(long organizationId) {
+        Organization organization = organizationRepository.findById(organizationId).orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+        return organization.getExamSetters();
+    }
+
+    @Override
+    public Set<ExamSetterInvitation> getExamSetterInvitations(long organizationId) {
+        Set<ExamSetterInvitation> invitations = examSetterInvitationRepository.findByOrganizationId(organizationId);
+        return invitations;
+    }
+
+    @Transactional
+    @Override
+    public Set<ExamResponse> getExams(long organizationId) {
+        Set<ExamResponse> examsResponses = new HashSet<>();
+        Set<Exam> exams = examRepository.findByOrganizationId(organizationId);
+        exams.stream().map(exam -> modelMapper.map(exam, ExamResponse.class)).forEach(examsResponses::add);
+        return examsResponses;
+    }
+
     @Override
     public ResponseEntity<GenericAddOrUpdateResponse> inviteExamSetter(long organizationId, InviteExamSetterRequest request) {
         try {
@@ -207,7 +280,7 @@ public class OrganizationServiceImpl implements OrganizationService{
                     .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
 
             String token = UUID.randomUUID().toString();
-            String invitationLink = "https://auth/signup/candidate?token=" + token;
+            String invitationLink = "http://127.0.0.1:4500/auth/signup/examSetter?invitation=" + token;
 
             ExamSetterInvitation invitation = new ExamSetterInvitation();
             invitation.setEmail(request.getEmail());
@@ -244,6 +317,15 @@ public class OrganizationServiceImpl implements OrganizationService{
         return "You have been invited to join the organization. Click the link to register: " +
                 invitationLink;
     }
+
+    public String confirmToken(String Token){
+        ExamSetterInvitation invitation = examSetterInvitationRepository.findByToken(Token).orElseThrow(() -> new IllegalArgumentException("Invitation not found"));
+        invitation.setAccepted(true);
+        examSetterInvitationRepository.save(invitation);
+        return "Invitation accepted";
+    }
+
+
 
 
 }

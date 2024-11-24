@@ -12,7 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class MCQOptionRequest {
     private String optionText;
-    private boolean isCorrect;
+    private boolean correct;
     private double marks;
 }
 

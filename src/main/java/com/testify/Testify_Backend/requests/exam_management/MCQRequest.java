@@ -3,7 +3,7 @@ package com.testify.Testify_Backend.requests.exam_management;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.util.Set;
+import java.util.List;
 
 @Setter
 @Getter
@@ -11,6 +11,10 @@ import java.util.Set;
 @NoArgsConstructor
 @SuperBuilder
 @ToString(callSuper = true)
-public class MCQRequest extends QuestionRequest{
-    private Set<MCQOptionRequest> options;
+public class MCQRequest{
+    private long examId;
+    private String questionText;
+    private String difficultyLevel;
+    private List<MCQOptionRequest> options;
+
 }

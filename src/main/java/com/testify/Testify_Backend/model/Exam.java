@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.model;
 import com.testify.Testify_Backend.converter.QuestionSequenceConverter;
+import com.testify.Testify_Backend.enums.OrderType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,7 +33,12 @@ public class Exam {
     @ManyToOne
     private Organization organization;
 
+    @Lob //Specifies that the column should be capable of storing large objects, allowing TEXT types in the database.
+    @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String instructions;
     private int duration;
 
@@ -44,6 +50,16 @@ public class Exam {
 
     @Column(nullable = false)
     private boolean isPrivate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderType orderType;
+
+    @OneToOne(mappedBy = "exam", cascade = CascadeType.ALL)
+    private FixedOrder fixedOrder;
+
+    @OneToOne(mappedBy = "exam", cascade = CascadeType.ALL)
+    private RandomOrder randomOrder;
 
     @ManyToOne
     @JoinColumn(name = "moderator_id")
@@ -70,5 +86,8 @@ public class Exam {
 
     @Convert(converter = QuestionSequenceConverter.class)
     private List<Long> questionSequence;
+
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
+    private List<Grade> gradings;
 
 }

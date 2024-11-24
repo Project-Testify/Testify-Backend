@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -22,7 +23,6 @@ import java.util.List;
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "_user")
 public abstract class User implements UserDetails {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
@@ -56,6 +56,13 @@ public abstract class User implements UserDetails {
     //email verification
     private Boolean enabled=false;
 
+    @Column(name = "date_created", updatable = false)
+    private LocalDateTime dateCreated;
+
+//    last login
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
+
     @JsonIgnore
     @OneToMany(mappedBy = "user")
     private List<Token> tokens;
@@ -73,6 +80,11 @@ public abstract class User implements UserDetails {
         this.locked = locked;
         this.enabled = enabled;
         this.verified = verified;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        dateCreated = LocalDateTime.now();
     }
 
     @Override

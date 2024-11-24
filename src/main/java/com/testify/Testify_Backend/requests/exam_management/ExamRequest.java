@@ -1,6 +1,7 @@
 package com.testify.Testify_Backend.requests.exam_management;
 
 
+import com.testify.Testify_Backend.enums.OrderType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -19,5 +20,6 @@ public class  ExamRequest {
     private LocalDateTime startDatetime;
     private LocalDateTime endDatetime;
     private boolean isPrivate;
+    private OrderType orderType;
     private Long moderatorId;
 }
