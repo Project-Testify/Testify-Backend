@@ -34,6 +34,13 @@ public class CandidateController {
         return ResponseEntity.ok(candidateExams);
     }
 
+    @GetMapping("/exams/{id}")
+    public ResponseEntity<CandidateExam> getCandidateExamDetails(@PathVariable Integer id) {
+        CandidateExam candidateExams;
+            candidateExams = candidateService.getCandidateExamDetails(id);
+        return ResponseEntity.ok(candidateExams);
+    }
+
     @GetMapping("/organizations")
     public ResponseEntity<List<OrganizationCandidateView>> getOrganizations(){
         List<OrganizationCandidateView> organizations;

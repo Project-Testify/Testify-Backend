@@ -15,10 +15,12 @@ import com.testify.Testify_Backend.responses.candidate_management.OrganizationCa
 import com.testify.Testify_Backend.utils.VarList;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -74,17 +76,7 @@ public class CandidateServiceImpl implements CandidateService {
             // Filter exams based on the provided status
             return allExams.stream()
                     .map(exam -> {
-                        CandidateExam candidateExam = modelMapper.map(exam, CandidateExam.class);
-
-                        if (now.isBefore(exam.getStartDatetime())) {
-                            candidateExam.setStatus(ExamStatus.UPCOMING);
-                        } else if (now.isAfter(exam.getEndDatetime())) {
-                            candidateExam.setStatus(ExamStatus.EXPIRED);
-                        } else {
-                            candidateExam.setStatus(ExamStatus.ONGOING);
-                        }
-
-                        return candidateExam;
+                        return getCandidateExam(exam, now);
                     })
                     .filter(candidateExam -> {
                         // Apply the status filter
@@ -96,6 +88,47 @@ public class CandidateServiceImpl implements CandidateService {
                     .collect(Collectors.toList());
         }
 
+    }
+
+    @Override
+    public CandidateExam getCandidateExamDetails(Integer examId) {
+        String currentUserEmail = "testcan@gmail.com";
+        Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Candidate not found"));
+
+        Exam exam = examRepository.findById((long) examId)
+                .orElseThrow(() -> new EntityNotFoundException("Exam not found"));
+
+        boolean isCandidateExam = examRepository.findExamsByCandidateId(candidate.getId())
+                .stream()
+                .anyMatch(candidateExam -> candidateExam.getId() == examId);
+
+        boolean isPublicExam = examRepository.findAllPublicExams()
+                .stream()
+                .anyMatch(publicExam -> publicExam.getId() == examId);
+
+        if (!isCandidateExam && !isPublicExam) {
+            throw new AccessDeniedException("You do not have access to this exam.");
+        }
+
+        // Determine the status of the exam
+        LocalDateTime now = LocalDateTime.now();
+        return getCandidateExam(exam, now);
+    }
+
+    @NotNull
+    private CandidateExam getCandidateExam(Exam exam, LocalDateTime now) {
+        CandidateExam candidateExam = modelMapper.map(exam, CandidateExam.class);
+
+        if (now.isBefore(exam.getStartDatetime())) {
+            candidateExam.setStatus(ExamStatus.UPCOMING);
+        } else if (now.isAfter(exam.getEndDatetime())) {
+            candidateExam.setStatus(ExamStatus.EXPIRED);
+        } else {
+            candidateExam.setStatus(ExamStatus.ONGOING);
+        }
+
+        return candidateExam;
     }
 
     @Override

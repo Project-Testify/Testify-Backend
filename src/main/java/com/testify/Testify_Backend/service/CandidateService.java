@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface CandidateService {
     public List<CandidateExam> getCandidateExams(String status);
+    public CandidateExam getCandidateExamDetails(Integer examId);
     public List<OrganizationCandidateView> getOrganizations();
     public CandidateProfile getCandidateProfile();
     public String updateCandidateProfile(Candidate candidate);
