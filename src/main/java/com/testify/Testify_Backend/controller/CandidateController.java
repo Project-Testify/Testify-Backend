@@ -1,6 +1,7 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
+import com.testify.Testify_Backend.responses.candidate_management.CandidateResponse;
 import com.testify.Testify_Backend.service.CandidateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,11 @@ public class CandidateController {
     public ResponseEntity<List<CandidateExam>> getCandidateExams() {
         List<CandidateExam> candidateExams = candidateService.getCandidateExams();
         return ResponseEntity.ok(candidateExams);
+    }
+
+    @GetMapping("/search")
+    public List<CandidateResponse> getAllCandidatesForSearch() {
+        return candidateService.getAllCandidatesForSearch();
     }
 
 }
