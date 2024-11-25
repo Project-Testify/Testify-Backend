@@ -10,4 +10,6 @@ public interface CandidateService {
     List<CandidateExam> getCandidateExams();
 
     List<CandidateResponse> getAllCandidatesForSearch();
+
+//    temp comment
 }
