@@ -4,7 +4,9 @@ import com.testify.Testify_Backend.model.Candidate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -19,4 +21,7 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
             "e.endDatetime BETWEEN :startDatetime AND :endDatetime)")
     List<Candidate> findCandidatesAssignedToExamWithConflictingExams(Long examId, LocalDateTime startDatetime, LocalDateTime endDatetime);
 
+    boolean existsByEmail(String currentUserEmail);
+    Set<Candidate> findAllByEmailIn(List<String> emails);
 }
+

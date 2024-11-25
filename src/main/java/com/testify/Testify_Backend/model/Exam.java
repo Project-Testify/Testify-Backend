@@ -51,6 +51,9 @@ public class Exam {
     @Column(nullable = false)
     private LocalDateTime endDatetime;
 
+    @Column
+    private String topics;
+
     @Column(nullable = false)
     private boolean isPrivate;
 
