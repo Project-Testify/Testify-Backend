@@ -58,4 +58,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "ORDER BY u.role ASC"
         )
     List<Object[]> findByRoleGroupByRole();
+
+    boolean existsByEmailAndVerified(String email, boolean verified);
+
+    @Query("SELECT u.contactNo FROM User u WHERE u.email = :email")
+    Optional<String> findContactByEmail(@Param("email") String email);
+
+
 }

@@ -1,17 +1,17 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.model.Exam;
+import com.testify.Testify_Backend.model.Grade;
 import com.testify.Testify_Backend.requests.exam_management.*;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
-import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
-import com.testify.Testify_Backend.responses.exam_management.QuestionListResponse;
-import com.testify.Testify_Backend.responses.exam_management.QuestionResponse;
-import com.testify.Testify_Backend.responses.exam_management.QuestionSequenceResponse;
+import com.testify.Testify_Backend.responses.exam_management.*;
 import com.testify.Testify_Backend.service.ExamManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/exam")
@@ -104,5 +104,24 @@ public class ExamManagementController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{examId}/order")
+    public ResponseEntity<OrderResponse> getExamOrderType(@PathVariable Long examId) {
+        return examManagementService.getExamOrderTypeAndValue(examId);
+    }
+
+    @PostMapping("/{examId}/grades")
+    public ResponseEntity<GenericAddOrUpdateResponse> saveGrades(@PathVariable Long examId, @RequestBody List<GradeRequest> gradeRequestList) {
+        return examManagementService.saveGrades(examId, gradeRequestList);
+    }
+
+    @GetMapping("/{examId}/grades")
+    public ResponseEntity<List<GradeResponse>> getGradesByExamId(@PathVariable Long examId) {
+        return examManagementService.getGradesByExamId(examId);
+    }
+
+    @PutMapping("/{examId}/grades")
+    public ResponseEntity<GenericAddOrUpdateResponse> updateGrades(@PathVariable Long examId, @RequestBody List<GradeRequest> gradeRequestList) {
+        return examManagementService.updateGrades(examId, gradeRequestList);
+    }
 
 }

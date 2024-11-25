@@ -1,6 +1,7 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.requests.auth.AuthenticationRequest;
+import com.testify.Testify_Backend.requests.auth.OrganisationRegistrationRequest;
 import com.testify.Testify_Backend.responses.auth.AuthenticationResponse;
 import com.testify.Testify_Backend.requests.auth.RegistrationRequest;
 import com.testify.Testify_Backend.responses.auth.RegisterResponse;

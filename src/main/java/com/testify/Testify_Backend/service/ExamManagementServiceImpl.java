@@ -34,6 +34,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private  final UserRepository userRepository;
     private final RandomOrderRepository randomOrderRepository;
     private final FixedOrderRepository fixedOrderRepository;
+    private final GradeRepository gradeRepository;
 
     private final ModelMapper modelMapper;
 
@@ -129,37 +130,44 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
     public GenericAddOrUpdateResponse<MCQRequest> saveMCQ(MCQRequest mcqRequest){
         GenericAddOrUpdateResponse<MCQRequest> response = new GenericAddOrUpdateResponse<>();
-        Optional<Exam> exam = examRepository.findById(mcqRequest.getExamId());
+        try{
+            Optional<Exam> exam = examRepository.findById(mcqRequest.getExamId());
 
-        if (exam.isEmpty()) {
-            response.setSuccess(false);
-            response.setMessage("Exam not found");
-            return response;
-        }
+            if (exam.isEmpty()) {
+                response.setSuccess(false);
+                response.setMessage("Exam not found");
+                return response;
+            }
 
-        MCQ mcq = MCQ.builder()
-                .questionText(mcqRequest.getQuestionText())
-                .exam(exam.get())
-                .difficultyLevel(mcqRequest.getDifficultyLevel().toUpperCase())
-                .isDeleted(false)
-                .build();
-
-        Set<MCQOption> options = mcqRequest.getOptions().stream().map(optionRequest -> {
-            MCQOption option = MCQOption.builder()
-                    .optionText(optionRequest.getOptionText())
-                    .correct(optionRequest.isCorrect()) // Convert string to boolean
-                    .marks(optionRequest.getMarks()) // Set the marks
+            MCQ mcq = MCQ.builder()
+                    .questionText(mcqRequest.getQuestionText())
+                    .exam(exam.get())
+                    .difficultyLevel(mcqRequest.getDifficultyLevel().toUpperCase())
+                    .isDeleted(false)
                     .build();
-            option.setMcqQuestion(mcq); // Set the relationship
-            return option;
-        }).collect(Collectors.toSet());
 
-        mcq.setOptions(options); // Set options to mcq
-        mcqQuestionRepository.save(mcq); // Save the question
+            Set<MCQOption> options = mcqRequest.getOptions().stream().map(optionRequest -> {
+                MCQOption option = MCQOption.builder()
+                        .optionText(optionRequest.getOptionText())
+                        .correct(optionRequest.isCorrect()) // Convert string to boolean
+                        .marks(optionRequest.getMarks()) // Set the marks
+                        .build();
+                option.setMcqQuestion(mcq); // Set the relationship
+                return option;
+            }).collect(Collectors.toSet());
 
-        response.setSuccess(true);
-        response.setId(mcq.getId());
-        response.setMessage("MCQ added successfully");
+            mcq.setOptions(options); // Set options to mcq
+            mcqQuestionRepository.save(mcq); // Save the question
+
+            response.setSuccess(true);
+            response.setId(mcq.getId());
+            response.setMessage("MCQ added successfully");
+
+        } catch (Exception e) {
+            // Handle case where MCQ is not found
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+        }
         return response;
     
     }
@@ -687,6 +695,132 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         // Return a generic response
         return response;
     }
+
+    @Override
+    public ResponseEntity<OrderResponse> getExamOrderTypeAndValue(Long examId) {
+        try {
+            Optional<Exam> examOptional = examRepository.findById(examId);
+            if (examOptional.isPresent()) {
+                Exam exam = examOptional.get();
+                OrderType orderType = exam.getOrderType();
+                Integer value = null;
+
+                switch (orderType) {
+                    case FIXED:
+                        FixedOrder fixedOrder = exam.getFixedOrder();
+                        if (fixedOrder != null) {
+                            value = fixedOrder.getFixedOrderValue();
+                        }
+                        break;
+                    case RANDOM:
+                        RandomOrder randomOrder = exam.getRandomOrder();
+                        if (randomOrder != null) {
+                            value = randomOrder.getRandomOrderValue();
+                        }
+                        break;
+                    default:
+                        // Handle other potential order types, if necessary
+                        break;
+                }
+
+                OrderResponse orderResponse = new OrderResponse(orderType, value);
+                return ResponseEntity.ok(orderResponse);
+            } else {
+                // Return an empty response with status OK if no exam found
+                return ResponseEntity.ok(new OrderResponse());
+            }
+        } catch (Exception e) {
+            // Log the error and return a generic response to avoid exposing details
+            e.printStackTrace(); // Consider using a proper logging framework
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new OrderResponse());
+        }
+    }
+
+
+
+    public ResponseEntity<GenericAddOrUpdateResponse> saveGrades(Long examId, List<GradeRequest> gradeRequestList) {
+        GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
+
+        try {
+            Exam exam = examRepository.findById(examId)
+                    .orElseThrow(() -> new RuntimeException("Exam not found"));
+
+            List<Grade> grades = gradeRequestList.stream()
+                    .map(dto -> new Grade(0, dto.getGradingString(), dto.getMinMarks(), dto.getMaxMarks(), exam))
+                    .collect(Collectors.toList());
+
+            gradeRepository.saveAll(grades);
+
+            response.setSuccess(true);
+            response.setMessage("Grades added successfully");
+
+        } catch (RuntimeException ex) {
+            response.setSuccess(false);
+            response.setMessage(ex.getMessage());
+
+        } catch (Exception ex) {
+            response.setSuccess(false);
+            response.setMessage("An unexpected error occurred while saving grades");
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<List<GradeResponse>> getGradesByExamId(Long examId) {
+        List<GradeResponse> gradeResponses;
+
+        try {
+            List<Grade> grades = gradeRepository.findByExamId(examId);
+
+            if (grades.isEmpty()) {
+                throw new RuntimeException("No grades found for the given exam ID");
+            }
+
+            gradeResponses = grades.stream()
+                    .map(grade -> new GradeResponse(grade.getId(), grade.getGrade(), grade.getMinMarks(), grade.getMaxMarks()))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(gradeResponses);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<GenericAddOrUpdateResponse> updateGrades(Long examId, List<GradeRequest> gradeRequestList) {
+        GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
+
+        try {
+            Exam exam = examRepository.findById(examId)
+                    .orElseThrow(() -> new RuntimeException("Exam not found"));
+
+            // Delete existing grades for the exam
+            gradeRepository.deleteByExamId(examId);
+
+            // Map and save new grades
+            List<Grade> newGrades = gradeRequestList.stream()
+                    .map(dto -> new Grade(0, dto.getGradingString(), dto.getMinMarks(), dto.getMaxMarks(), exam))
+                    .collect(Collectors.toList());
+
+            gradeRepository.saveAll(newGrades);
+
+            response.setSuccess(true);
+            response.setMessage("Grades updated successfully");
+        } catch (RuntimeException ex) {
+            response.setSuccess(false);
+            response.setMessage(ex.getMessage());
+        } catch (Exception ex) {
+            response.setSuccess(false);
+            response.setMessage("An unexpected error occurred while updating grades");
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+
+
 
 
 }
