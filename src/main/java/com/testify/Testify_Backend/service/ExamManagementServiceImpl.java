@@ -4,8 +4,10 @@ import com.testify.Testify_Backend.enums.OrderType;
 import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.exam_management.*;
+import com.testify.Testify_Backend.responses.CandidateGroupResponse;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
+import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.exam_management.*;
 import com.testify.Testify_Backend.utils.UserUtil;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final RandomOrderRepository randomOrderRepository;
     private final FixedOrderRepository fixedOrderRepository;
     private final GradeRepository gradeRepository;
+    private final CandidateGroupRepository candidateGroupRepository;
 
     private final ModelMapper modelMapper;
 
@@ -555,6 +558,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         return response;
     }
 
+    @Transactional
     public ExamResponse getExamById(long examId) {
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
@@ -766,11 +770,14 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         return ResponseEntity.ok(response);
     }
 
+    @Transactional(readOnly = true)
     public ResponseEntity<List<GradeResponse>> getGradesByExamId(Long examId) {
         List<GradeResponse> gradeResponses;
 
         try {
             List<Grade> grades = gradeRepository.findByExamId(examId);
+
+            log.info("Grades: {}", grades);
 
             if (grades.isEmpty()) {
                 throw new RuntimeException("No grades found for the given exam ID");
@@ -818,6 +825,245 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
         return ResponseEntity.ok(response);
     }
+
+    @Override
+    @Transactional
+    public ResponseEntity<GenericAddOrUpdateResponse> addProctorsToExam(long examId, List<String> proctorEmails) {
+        Optional<Exam> optionalExam = examRepository.findById(examId);
+        GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
+
+        if (!optionalExam.isPresent()) {
+            response.setSuccess(false);
+            response.setMessage("Exam not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        Exam exam = optionalExam.get();
+        log.info("Exam found with ID: {}", examId);
+
+        // If the email list is empty, clear all existing proctors and save
+        if (proctorEmails == null || proctorEmails.isEmpty()) {
+            log.info("Received empty proctor email list. Removing all existing proctors for exam ID: {}", examId);
+            exam.getProctors().clear();
+            examRepository.save(exam);
+
+            response.setSuccess(true);
+            response.setMessage("All proctors removed successfully");
+            return ResponseEntity.ok(response);
+        }
+
+        // Clear existing proctors
+        Set<ExamSetter> existingProctors = exam.getProctors();
+        log.info("Existing proctors: {}", existingProctors);
+        existingProctors.clear();
+
+        // Fetch new proctors based on email
+        Set<ExamSetter> newProctors = new HashSet<>();
+        for (String email : proctorEmails) {
+            Optional<ExamSetter> examSetterOpt = examSetterRepository.findByEmail(email);
+            if (examSetterOpt.isPresent()) {
+                log.info("Proctor found with email: {}", email);
+                newProctors.add(examSetterOpt.get());
+            } else {
+                response.setSuccess(false);
+                response.setMessage("Proctor with email " + email + " not found");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+        }
+
+        // Add new proctors to the exam
+        log.info("New proctors: {}", newProctors);
+        exam.setProctors(newProctors);
+        examRepository.save(exam);
+
+        response.setSuccess(true);
+        response.setMessage("Proctors updated successfully");
+        return ResponseEntity.ok(response);
+    }
+
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<ProctorResponse>> getProctorsByExamId(Long examId) {
+        try {
+            // Try to fetch the exam
+            Exam exam = examRepository.findById(examId)
+                    .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+            // Convert the exam setters (proctors) to ProctorResponse
+            List<ProctorResponse> proctors = exam.getProctors().stream()
+                    .map(proctor -> new ProctorResponse(
+                            proctor.getId(),
+                            proctor.getFirstName(),
+                            proctor.getLastName(),
+                            proctor.getEmail()))
+                    .collect(Collectors.toList());
+
+            // Return the list of proctors
+            return ResponseEntity.ok(proctors);
+
+        } catch (RuntimeException ex) {
+            // Return 404 if the exam is not found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(null);
+        } catch (Exception ex) {
+            // Return 500 if an unexpected error occurs
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<GenericAddOrUpdateResponse<CandidateEmailListRequest>> updateExamCandidates(
+            Long examId, List<String> candidateEmails) {
+
+        GenericAddOrUpdateResponse<CandidateEmailListRequest> response = new GenericAddOrUpdateResponse<>();
+
+        try {
+            // Find the exam by ID
+            Exam exam = examRepository.findById(examId)
+                    .orElseThrow(() -> new RuntimeException("Exam not found with id: " + examId));
+
+            // Clear existing candidates from the exam
+            exam.getCandidates().clear();
+
+            // Find candidates by email and add them to the exam
+            Set<Candidate> newCandidates = candidateEmails.stream()
+                    .map(email -> candidateRepository.findByEmail(email)
+                            .orElseThrow(() -> new RuntimeException("Candidate not found with email: " + email)))
+                    .collect(Collectors.toSet());
+
+            // Add new candidates and save the updated exam
+            exam.getCandidates().addAll(newCandidates);
+            examRepository.save(exam);
+
+            // Success response
+            response.setSuccess(true);
+            response.setMessage("Candidates updated successfully.");
+            response.setId(examId);
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            // Handle exam or candidate not found exceptions
+            response.setSuccess(false);
+            response.setMessage(e.getMessage());
+            response.setId(examId);
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+
+        } catch (Exception e) {
+            // Handle any other unexpected exceptions
+            response.setSuccess(false);
+            response.setMessage("An unexpected error occurred: " + e.getMessage());
+            response.setId(examId);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @Transactional
+    public List<CandidateResponse> getCandidatesByExamId(Long examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with id: " + examId));
+
+        // Return an empty list if there are no candidates
+        return exam.getCandidates() == null || exam.getCandidates().isEmpty()
+                ? List.of()
+                : exam.getCandidates().stream()
+                .map(candidate -> new CandidateResponse(
+                        candidate.getId(),
+                        candidate.getEmail(),
+                        candidate.getFirstName(),
+                        candidate.getLastName()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<CandidateGroupSearchResponse> getCandidateGroupsByOrganizationForSearch(Long organizationId) {
+
+        Set<CandidateGroup> candidateGroups = candidateGroupRepository.findByOrganizationId(organizationId);
+
+        // Return null if no candidate groups are found
+        if (candidateGroups.isEmpty()) {
+            return null;
+        }
+
+        return candidateGroups.stream()
+                .map(group -> new CandidateGroupSearchResponse(
+                        group.getId(),
+                        group.getName(),
+                        group.getCandidates().stream()
+                                .map(candidate -> new CandidateResponse(
+                                        candidate.getId(),
+                                        candidate.getEmail(),
+                                        candidate.getFirstName(),
+                                        candidate.getLastName()))
+                                .collect(Collectors.toSet()))) // Collect as a Set
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<ConflictExamResponse> getExamsScheduledBetween(Long examId) {
+        Exam currentExam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        List<Exam> conflictingExams = examRepository.findExamsScheduledBetween(
+                currentExam.getOrganization().getId(),
+                examId,
+                currentExam.getStartDatetime(),
+                currentExam.getEndDatetime()
+        );
+
+        return conflictingExams.stream()
+                .map(exam -> ConflictExamResponse.builder()
+                        .id(exam.getId())
+                        .title(exam.getTitle())
+                        .description(exam.getDescription())
+                        .instructions(exam.getInstructions())
+                        .duration(exam.getDuration())
+                        .startDatetime(exam.getStartDatetime())
+                        .endDatetime(exam.getEndDatetime())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<CandidateConflictExamResponse> getCandidateConflictingExams(Long examId) {
+        Exam currentExam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        // Fetch candidates assigned to the current exam
+        List<Candidate> assignedCandidates = candidateRepository.findCandidatesAssignedToExamWithConflictingExams(
+                examId,
+                currentExam.getStartDatetime(),
+                currentExam.getEndDatetime()
+        );
+
+        List<CandidateConflictExamResponse> responseList = new ArrayList<>();
+        for (Candidate candidate : assignedCandidates) {
+            // Check the exams of the candidate for conflicts
+            candidate.getExams().stream()
+                    .filter(exam -> (
+                            exam.getStartDatetime().isBefore(currentExam.getEndDatetime()) &&
+                                    exam.getEndDatetime().isAfter(currentExam.getStartDatetime())))
+                    .forEach(conflictingExam -> responseList.add(CandidateConflictExamResponse.builder()
+                            .studentId(candidate.getId())
+                            .firstName(candidate.getFirstName())
+                            .lastName(candidate.getLastName())
+                            .examId(conflictingExam.getId())
+                            .title(conflictingExam.getTitle())
+                            .description(conflictingExam.getDescription())
+                            .instructions(conflictingExam.getInstructions())
+                            .duration(conflictingExam.getDuration())
+                            .startDatetime(conflictingExam.getStartDatetime())
+                            .endDatetime(conflictingExam.getEndDatetime())
+                            .build()));
+        }
+
+        return responseList; // This will return a list of conflicting exams or empty if none found
+    }
+
 
 
 

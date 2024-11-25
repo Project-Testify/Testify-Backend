@@ -5,6 +5,7 @@ import com.testify.Testify_Backend.model.Organization;
 import com.testify.Testify_Backend.repository.CandidateRepository;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
+import com.testify.Testify_Backend.responses.candidate_management.CandidateResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateProfile;
 import com.testify.Testify_Backend.responses.candidate_management.OrganizationCandidateView;
 import com.testify.Testify_Backend.service.CandidateService;
@@ -32,6 +33,12 @@ public class CandidateController {
             candidateExams = candidateService.getCandidateExams(null);
         }
         return ResponseEntity.ok(candidateExams);
+    }
+
+
+    @GetMapping("/search")
+    public List<CandidateResponse> getAllCandidatesForSearch() {
+        return candidateService.getAllCandidatesForSearch();
     }
 
     @GetMapping("/exams/{id}")
@@ -86,7 +93,5 @@ public class CandidateController {
         }
 
     }
-
-
 
 }

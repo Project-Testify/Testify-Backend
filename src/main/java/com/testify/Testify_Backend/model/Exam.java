@@ -34,12 +34,15 @@ public class Exam {
     private Organization organization;
 
     @Lob //Specifies that the column should be capable of storing large objects, allowing TEXT types in the database.
+    @Basic(fetch = FetchType.LAZY)
     @Column(columnDefinition = "TEXT")
     private String description;
 
     @Lob
+    @Basic(fetch = FetchType.LAZY)
     @Column(columnDefinition = "TEXT")
     private String instructions;
+
     private int duration;
 
     @Column(nullable = false)

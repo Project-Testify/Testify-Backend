@@ -2,7 +2,6 @@ package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
-import com.testify.Testify_Backend.requests.VerificationRequestRequest;
 import com.testify.Testify_Backend.requests.organization_management.AddExamSetterRequest;
 import com.testify.Testify_Backend.requests.organization_management.CandidateGroupRequest;
 import com.testify.Testify_Backend.requests.organization_management.CourseModuleRequest;
@@ -13,14 +12,12 @@ import com.testify.Testify_Backend.responses.GenericDeleteResponse;
 import com.testify.Testify_Backend.responses.courseModule.CourseModuleResponse;
 
 import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
+import com.testify.Testify_Backend.responses.organization_management.ExamSetterSearchResponse;
 
 //import com.testify.Testify_Backend.utils.FileUploadUtil;
 
 import com.testify.Testify_Backend.utils.FileUtil;
-
 import jakarta.transaction.Transactional;
-
-import com.testify.Testify_Backend.utils.FileUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -285,6 +280,7 @@ public class OrganizationServiceImpl implements OrganizationService{
 
             String token = UUID.randomUUID().toString();
             String invitationLink = "http://127.0.0.1:4500/auth/signup/examSetter?invitation=" + token;
+            log.info("Invitation link: " + invitationLink);
 
             ExamSetterInvitation invitation = new ExamSetterInvitation();
             invitation.setEmail(request.getEmail());
@@ -328,6 +324,42 @@ public class OrganizationServiceImpl implements OrganizationService{
         examSetterInvitationRepository.save(invitation);
         return "Invitation accepted";
     }
+
+    @Transactional
+    public ResponseEntity<?> getExamSettersForSearchByOrganizationId(Long organizationId) {
+        try {
+            // Find the organization by ID
+            Organization organization = organizationRepository.findById(organizationId)
+                    .orElseThrow(() -> new IllegalArgumentException("Organization not found with id: " + organizationId));
+
+            log.debug("Organization: " + organization);
+
+            // Get the set of exam setters
+            Set<ExamSetter> examSetters = organization.getExamSetters();
+            log.info("Exam setters: " + examSetters);
+
+            // Map each ExamSetter to ExamSetterSearchResponse and collect as a List
+            List<ExamSetterSearchResponse> responseList = examSetters.stream()
+                    .map(examSetter -> new ExamSetterSearchResponse(
+                            examSetter.getId(),
+                            examSetter.getFirstName(),
+                            examSetter.getLastName(),
+                            examSetter.getEmail()
+                    ))
+                    .collect(Collectors.toList());
+
+            // Return a 200 OK response with the list of exam setters
+            return ResponseEntity.ok(responseList);
+        } catch (IllegalArgumentException e) {
+            // Return a 404 NOT FOUND response with an error message
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            // Handle any other exceptions with a 500 INTERNAL SERVER ERROR response
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+
 
 
 
