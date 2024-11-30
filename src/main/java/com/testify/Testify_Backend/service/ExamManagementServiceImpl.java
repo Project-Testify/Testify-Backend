@@ -1,6 +1,7 @@
 package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.enums.OrderType;
+import com.testify.Testify_Backend.enums.QuestionType;
 import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.exam_management.*;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,7 +37,9 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final RandomOrderRepository randomOrderRepository;
     private final FixedOrderRepository fixedOrderRepository;
     private final GradeRepository gradeRepository;
-
+    private final ExamSessionRepository examSessionRepository;
+    private final CandidateExamAnswerRepository candidateExamAnswerRepository;
+    private final MCQOptionRepository mcqOptionRepository;
     private final ModelMapper modelMapper;
 
 
@@ -142,6 +146,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
             MCQ mcq = MCQ.builder()
                     .questionText(mcqRequest.getQuestionText())
                     .exam(exam.get())
+                    .type(QuestionType.MCQ)
                     .difficultyLevel(mcqRequest.getDifficultyLevel().toUpperCase())
                     .isDeleted(false)
                     .build();
@@ -237,6 +242,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         Essay essay = Essay.builder()
                 .questionText(essayRequest.getQuestionText())
                 .exam(exam.get())
+                .type(QuestionType.ESSAY)
                 .difficultyLevel(essayRequest.getDifficultyLevel().toUpperCase())
                 .isDeleted(false)
                 .build();
@@ -819,6 +825,93 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         return ResponseEntity.ok(response);
     }
 
+    @Override
+    @Transactional
+    public ExamSessionResponse startExam(StartExamRequest request) {
+        // Validate Candidate
+        Candidate candidate = candidateRepository.findById(request.getCandidateId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid candidate ID"));
+
+        // Validate Exam
+        Exam exam = examRepository.findById(request.getExamId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid exam ID"));
+
+        // Get all questions of the exam and shuffle them to randomize order
+        List<Question> questions = questionRepository.findByExamId(exam.getId());
+        if (questions.isEmpty()) {
+            throw new IllegalArgumentException("No questions found for this exam");
+        }
+
+        // Shuffle questions to randomize the order
+        Collections.shuffle(questions);
+
+        // Set the start time and end time (end time should be calculated based on exam duration)
+        LocalDateTime startTime = LocalDateTime.now();
+        LocalDateTime endTime = startTime.plusMinutes(exam.getDuration()); // Assuming exam has a duration in minutes
+
+        // Create and save the exam session
+        CandidateExamSession session = new CandidateExamSession();
+        session.setCandidate(candidate);
+        session.setExam(exam);
+        session.setStartTime(startTime);
+        session.setEndTime(endTime);
+        session.setInProgress(true);
+        session.setCurrentQuestionIndex(0); // Start from the first question
+        session.setAnswers(new ArrayList<>()); // Empty answers at the start
+
+        // Save session
+        CandidateExamSession savedSession = examSessionRepository.save(session);
+
+        // Map to response DTO
+        ExamSessionResponse response = modelMapper.map(savedSession, ExamSessionResponse.class);
+
+        return response;
+    }
+
+    @Override
+    public void saveAnswer(Long sessionId, Long questionId, Long optionId, String answerText) {
+        // Find the candidate exam session
+        CandidateExamSession session = examSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid session ID"));
+
+        // Find the question
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid question ID"));
+
+        // Check if the answerText is an empty string and convert it to null if necessary
+        if (answerText != null && answerText.trim().isEmpty()) {
+            answerText = null;
+        }
+
+        // Handle answer saving based on question type
+        if (question.getType().equals(QuestionType.MCQ)) {
+            // Find the selected option for MCQ
+            MCQOption option = mcqOptionRepository.findById(optionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid option ID"));
+
+            // Create and save the MCQAnswer
+            MCQAnswer mcqAnswer = new MCQAnswer();
+            mcqAnswer.setCandidateExamSession(session);
+            mcqAnswer.setQuestion(question);
+            mcqAnswer.setOption(option);  // Option is set for MCQ
+
+            candidateExamAnswerRepository.save(mcqAnswer);
+        } else if (question.getType().equals(QuestionType.ESSAY)) {
+            // Create and save the EssayAnswer
+            EssayAnswer essayAnswer = new EssayAnswer();
+            essayAnswer.setCandidateExamSession(session);
+            essayAnswer.setQuestion(question);
+
+            // Set essay answer text, if provided
+            if (answerText != null) {
+                essayAnswer.setAnswerText(answerText);  // Only set if not null
+            }
+
+            candidateExamAnswerRepository.save(essayAnswer);
+        } else {
+            throw new IllegalArgumentException("Unsupported question type");
+        }
+    }
 
 
 

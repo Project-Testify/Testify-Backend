@@ -13,6 +13,8 @@ public interface ExamManagementService {
     GenericAddOrUpdateResponse<ExamRequest> createExam(ExamRequest examRequest);
     GenericAddOrUpdateResponse<ExamUpdateRequest> updateExam(long examId, ExamUpdateRequest examUpdateRequest);
     ExamResponse getExamById(long examId);
+    ExamSessionResponse startExam(StartExamRequest request);
+    void saveAnswer(Long sessionId, Long questionId, Long optionId, String answerText);
 
     GenericAddOrUpdateResponse<MCQUpdateRequest> updateMCQQuestion(MCQUpdateRequest mcqUpdateRequest);
     GenericAddOrUpdateResponse<MCQRequest> saveMCQ(MCQRequest mcqRequest);
