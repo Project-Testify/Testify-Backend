@@ -10,10 +10,7 @@ import com.testify.Testify_Backend.responses.candidate_management.OrganizationCa
 import java.util.List;
 
 public interface CandidateService {
-    List<CandidateExam> getCandidateExams();
-
     List<CandidateResponse> getAllCandidatesForSearch();
-
 //    temp comment
     public List<CandidateExam> getCandidateExams(String status);
     public CandidateExam getCandidateExamDetails(Integer examId);
