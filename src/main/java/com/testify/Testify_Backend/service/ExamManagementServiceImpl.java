@@ -1,6 +1,8 @@
 package com.testify.Testify_Backend.service;
 
+import com.testify.Testify_Backend.enums.ExamType;
 import com.testify.Testify_Backend.enums.OrderType;
+import com.testify.Testify_Backend.enums.QuestionType;
 import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.exam_management.*;
@@ -16,9 +18,11 @@ import org.antlr.v4.runtime.misc.LogManager;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,8 +41,11 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final RandomOrderRepository randomOrderRepository;
     private final FixedOrderRepository fixedOrderRepository;
     private final GradeRepository gradeRepository;
+    private final ExamSessionRepository examSessionRepository;
+    private final CandidateExamAnswerRepository candidateExamAnswerRepository;
+    private final MCQOptionRepository mcqOptionRepository;
     private final CandidateGroupRepository candidateGroupRepository;
-
+    private final CandidateGroupRepository candidateGroupRepository;
     private final ModelMapper modelMapper;
 
 
@@ -145,6 +152,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
             MCQ mcq = MCQ.builder()
                     .questionText(mcqRequest.getQuestionText())
                     .exam(exam.get())
+                    .type(QuestionType.MCQ)
                     .difficultyLevel(mcqRequest.getDifficultyLevel().toUpperCase())
                     .isDeleted(false)
                     .build();
@@ -240,6 +248,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         Essay essay = Essay.builder()
                 .questionText(essayRequest.getQuestionText())
                 .exam(exam.get())
+                .type(QuestionType.ESSAY)
                 .difficultyLevel(essayRequest.getDifficultyLevel().toUpperCase())
                 .isDeleted(false)
                 .build();
@@ -371,6 +380,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         return response;
     }
 
+
     @Transactional(readOnly = true)
     public ResponseEntity<QuestionSequenceResponse> getQuestionSequence(long examId) {
         QuestionSequenceResponse response = new QuestionSequenceResponse();
@@ -404,19 +414,42 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         }
     }
 
+    @Override
     @Transactional(readOnly = true)
     public ResponseEntity<QuestionListResponse> getAllQuestionsByExamId(long examId) {
         QuestionListResponse response = new QuestionListResponse();
         List<QuestionResponse> questionResponses = new ArrayList<>();
 
         try {
+            // Extract username from JWT
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+            if (currentUserEmail == null) {
+                throw new IllegalStateException("No authenticated user found");
+            }
+
+            // Fetch the role of the user
+            String role = userRepository.findByEmail(currentUserEmail)
+                    .map(user -> user.getRole().name()) // Convert UserRole enum to String
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
             // Fetch questions associated with the exam ID that are not deleted
             List<Question> questions = questionRepository.findAllActiveQuestionsByExamId(examId);
+            Optional<Exam> examOptional = examRepository.findById(examId);
+
+            if (examOptional.isEmpty()) {
+                throw new IllegalArgumentException("Exam not found for ID: " + examId);
+            }
+
+            System.out.println(role);
+
+            Exam exam = examOptional.get();
+            ExamType examType = exam.getExamType();
 
             // Check if questions are found
             if (questions.isEmpty()) {
                 // Return null instead of an error message
-                return ResponseEntity.ok(null); // Return 200 OK with null body
+                return ResponseEntity.ok(null);
             }
 
             for (Question question : questions) {
@@ -431,20 +464,25 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                             .map(option -> MCQOptionResponse.builder()
                                     .optionId(option.getId())
                                     .optionText(option.getOptionText())
-                                    .correct(option.isCorrect())
-                                    .marks(option.getMarks())
+                                    // Exclude 'correct' flag if the user is a candidate
+                                    .correct(!role.equals("CANDIDATE") && option.isCorrect())
+                                    .marks(role.equals("CANDIDATE") ? 0.00 : option.getMarks())
                                     .build())
                             .collect(Collectors.toList());
                 }
+
                 // Populate cover points for essays
                 else if (question instanceof Essay) {
-                    coverPoints = ((Essay) question).getCoverPoints().stream()
-                            .map(point -> EssayCoverPointResponse.builder()
-                                    .coverPointId(point.getId())
-                                    .coverPointText(point.getCoverPointText())
-                                    .marks(point.getMarks())
-                                    .build())
-                            .collect(Collectors.toList());
+                    // Exclude cover points if the user is a candidate
+                    if (!role.equals("CANDIDATE")) {
+                        coverPoints = ((Essay) question).getCoverPoints().stream()
+                                .map(point -> EssayCoverPointResponse.builder()
+                                        .coverPointId(point.getId())
+                                        .coverPointText(point.getCoverPointText())
+                                        .marks(point.getMarks())
+                                        .build())
+                                .collect(Collectors.toList());
+                    }
                 }
 
                 // Build the QuestionResponse object
@@ -461,6 +499,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
             // Set the response with the questions
             response.setExamId(examId);
+            response.setExamType(examType);
             response.setQuestions(questionResponses);
             return ResponseEntity.ok(response);  // Return 200 OK with questions
 
@@ -475,7 +514,6 @@ public class ExamManagementServiceImpl implements ExamManagementService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);  // Return 500 Internal Server Error
         }
     }
-
 
 
 
@@ -828,6 +866,97 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
     @Override
     @Transactional
+    public ExamSessionResponse startExam(StartExamRequest request) {
+        // Get the username (email) from SecurityContextHolder
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (currentUserEmail == null) {
+            throw new IllegalStateException("No authenticated user found");
+        }
+
+        Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Candidate not found for email: " + currentUserEmail));
+
+        // Validate Exam
+        Exam exam = examRepository.findById(request.getExamId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid exam ID"));
+
+        // Get all questions of the exam and shuffle them to randomize order
+        List<Question> questions = questionRepository.findByExamId(exam.getId());
+        if (questions.isEmpty()) {
+            throw new IllegalArgumentException("No questions found for this exam");
+        }
+
+        // Shuffle questions to randomize the order
+        Collections.shuffle(questions);
+
+        // Set the start time and end time (end time should be calculated based on exam duration)
+        LocalDateTime startTime = LocalDateTime.now();
+        LocalDateTime endTime = startTime.plusMinutes(exam.getDuration()); // Assuming exam has a duration in minutes
+
+        // Create and save the exam session
+        CandidateExamSession session = new CandidateExamSession();
+        session.setCandidate(candidate);
+        session.setExam(exam);
+        session.setStartTime(startTime);
+        session.setEndTime(endTime);
+        session.setInProgress(true);
+        session.setCurrentQuestionIndex(0); // Start from the first question
+        session.setAnswers(new ArrayList<>()); // Empty answers at the start
+
+        // Save session
+        CandidateExamSession savedSession = examSessionRepository.save(session);
+
+        // Map to response DTO
+        ExamSessionResponse response = modelMapper.map(savedSession, ExamSessionResponse.class);
+
+        return response;
+    }
+
+    @Override
+    public void saveAnswer(Long sessionId, Long questionId, Long optionId, String answerText) {
+        // Find the candidate exam session
+        CandidateExamSession session = examSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid session ID"));
+
+        // Find the question
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid question ID"));
+
+        // Check if the answerText is an empty string and convert it to null if necessary
+        if (answerText != null && answerText.trim().isEmpty()) {
+            answerText = null;
+        }
+
+        // Handle answer saving based on question type
+        if (question.getType().equals(QuestionType.MCQ)) {
+            // Find the selected option for MCQ
+            MCQOption option = mcqOptionRepository.findById(optionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid option ID"));
+
+            // Create and save the MCQAnswer
+            MCQAnswer mcqAnswer = new MCQAnswer();
+            mcqAnswer.setCandidateExamSession(session);
+            mcqAnswer.setQuestion(question);
+            mcqAnswer.setOption(option);  // Option is set for MCQ
+
+            candidateExamAnswerRepository.save(mcqAnswer);
+        } else if (question.getType().equals(QuestionType.ESSAY)) {
+            // Create and save the EssayAnswer
+            EssayAnswer essayAnswer = new EssayAnswer();
+            essayAnswer.setCandidateExamSession(session);
+            essayAnswer.setQuestion(question);
+
+            // Set essay answer text, if provided
+            if (answerText != null) {
+                essayAnswer.setAnswerText(answerText);  // Only set if not null
+            }
+
+            candidateExamAnswerRepository.save(essayAnswer);
+        } else {
+            throw new IllegalArgumentException("Unsupported question type");
+        }
+    }
     public ResponseEntity<GenericAddOrUpdateResponse> addProctorsToExam(long examId, List<String> proctorEmails) {
         Optional<Exam> optionalExam = examRepository.findById(examId);
         GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
@@ -1063,8 +1192,6 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
         return responseList; // This will return a list of conflicting exams or empty if none found
     }
-
-
 
 
 

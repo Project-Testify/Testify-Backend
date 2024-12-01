@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.model;
 
+import com.testify.Testify_Backend.enums.QuestionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,4 +32,8 @@ public abstract class Question {
 
     @Column(nullable = false)
     private String difficultyLevel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "question_type", nullable = false)
+    private QuestionType type;
 }

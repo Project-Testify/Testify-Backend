@@ -10,4 +10,5 @@ import java.util.List;
 public interface QuestionRepository extends JpaRepository<Question, Long>{
     @Query("SELECT q FROM Question q WHERE q.exam.id = :examId AND q.isDeleted = false")
     List<Question> findAllActiveQuestionsByExamId(@Param("examId") long examId);
+    List<Question> findByExamId(Long examId);
 }
