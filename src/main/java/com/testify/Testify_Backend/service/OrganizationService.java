@@ -44,4 +44,6 @@ public interface OrganizationService {
     Set<ExamSetterInvitation> getExamSetterInvitations(long organizationId);
 
     Set<ExamResponse> getExams(long organizationId);
+
+    ResponseEntity<?> getExamSettersForSearchByOrganizationId(Long organizationId);
 }

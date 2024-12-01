@@ -8,11 +8,18 @@ import com.testify.Testify_Backend.responses.exam_management.*;
 import com.testify.Testify_Backend.service.ExamManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import com.testify.Testify_Backend.responses.GenericResponse;
+import com.testify.Testify_Backend.responses.exam_management.*;
+import com.testify.Testify_Backend.service.ExamManagementService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/exam")
 @RequiredArgsConstructor
@@ -119,6 +126,7 @@ public class ExamManagementController {
         return examManagementService.getGradesByExamId(examId);
     }
 
+
     @PutMapping("/{examId}/grades")
     public ResponseEntity<GenericAddOrUpdateResponse> updateGrades(@PathVariable Long examId, @RequestBody List<GradeRequest> gradeRequestList) {
         return examManagementService.updateGrades(examId, gradeRequestList);
@@ -144,6 +152,46 @@ public class ExamManagementController {
         } catch (Exception e) {
             return new ResponseEntity<>("Error saving answer: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    
+    @PostMapping("/{examId}/proctors")
+    public ResponseEntity<GenericAddOrUpdateResponse> addOrUpdateProctors(
+            @PathVariable Long examId,
+            @RequestBody List<String> emails) {
+        log.info("Adding proctors to examId: " + examId);
+        log.info("Emails: " + emails);
+        return examManagementService.addProctorsToExam(examId, emails);
+    }
+
+    @GetMapping("/{examId}/proctors")
+    public ResponseEntity<List<ProctorResponse>> getProctorsByExamId(@PathVariable Long examId) {
+        return examManagementService.getProctorsByExamId(examId);
+    }
+
+    @PostMapping("/{examId}/update-candidates")
+    public ResponseEntity<GenericAddOrUpdateResponse<CandidateEmailListRequest>> updateExamCandidates(
+            @PathVariable Long examId,
+            @RequestBody CandidateEmailListRequest candidateEmailListRequest) {
+
+        log.info("Updating candidates for examId: " + examId);
+        log.info("Emails: " + candidateEmailListRequest.getEmails());
+        return examManagementService.updateExamCandidates(examId, candidateEmailListRequest.getEmails());
+    }
+
+    @GetMapping("/{examId}/candidates")
+    public ResponseEntity<List<CandidateResponse>> getExamCandidates(@PathVariable Long examId) {
+        List<CandidateResponse> candidates = examManagementService.getCandidatesByExamId(examId);
+        return ResponseEntity.ok(candidates);
+    }
+    @GetMapping("/{examId}/conflicting-exams")
+    public ResponseEntity<List<ConflictExamResponse>> getConflictingExams(@PathVariable Long examId) {
+        List<ConflictExamResponse> conflictingExams = examManagementService.getExamsScheduledBetween(examId);
+        return ResponseEntity.ok(conflictingExams);
+    }
+
+    @GetMapping("/{examId}/conflicting-candidates")
+    public ResponseEntity<List<CandidateConflictExamResponse>> getCandidateConflictingExams(@PathVariable Long examId) {
+        List<CandidateConflictExamResponse> response = examManagementService.getCandidateConflictingExams(examId);
+        return ResponseEntity.ok(response);
     }
 
 }

@@ -10,6 +10,8 @@ import com.testify.Testify_Backend.repository.OrganizationRepository;
 import com.testify.Testify_Backend.repository.UserRepository;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
+import com.testify.Testify_Backend.responses.candidate_management.CandidateResponse;
+import com.testify.Testify_Backend.utils.UserUtil;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateProfile;
 import com.testify.Testify_Backend.responses.candidate_management.OrganizationCandidateView;
 import com.testify.Testify_Backend.utils.VarList;
@@ -23,7 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
+import java.util.List;
+import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -189,6 +192,22 @@ public class CandidateServiceImpl implements CandidateService {
         }
     }
 
+    public List<CandidateResponse> getAllCandidatesForSearch() {
+        List<Candidate> candidates = candidateRepository.findAll();
+
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        return candidates.stream()
+                .map(candidate -> new CandidateResponse(
+                        candidate.getId(),
+                        candidate.getFirstName(),
+                        candidate.getLastName(),
+                        candidate.getEmail()
+                        ))
+                .collect(Collectors.toList());
+    }
     @Override
     public String deleteCandidateProfile(long id){
         if(candidateRepository.existsById(id)){
@@ -198,7 +217,5 @@ public class CandidateServiceImpl implements CandidateService {
             return VarList.RSP_NO_DATA_FOUND;
         }
     }
-
-
 
 }

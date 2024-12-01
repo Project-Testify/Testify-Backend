@@ -13,7 +13,10 @@ import com.testify.Testify_Backend.responses.CandidateGroupResponse;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
 import com.testify.Testify_Backend.responses.courseModule.CourseModuleResponse;
+import com.testify.Testify_Backend.responses.exam_management.CandidateGroupSearchResponse;
 import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamSetterResponse;
+import com.testify.Testify_Backend.responses.organization_management.ExamSetterSearchResponse;
 import com.testify.Testify_Backend.service.ExamManagementService;
 import com.testify.Testify_Backend.service.OrganizationService;
 import com.testify.Testify_Backend.service.OrganizationServiceImpl;
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 
@@ -35,6 +39,7 @@ import java.util.Set;
 public class OrganizationController {
     private static final Logger logger = LoggerFactory.getLogger(OrganizationController.class);
     private final OrganizationService organizationService;
+    private final ExamManagementService examManagementService;
 
     @PostMapping("/{organizationId}/exam-setter")
     public ResponseEntity<GenericAddOrUpdateResponse> addSetterToOrganization(@PathVariable long organizationId, @RequestBody AddExamSetterRequest addExamSetterRequest){
@@ -118,6 +123,11 @@ public class OrganizationController {
         return ResponseEntity.ok(examSetters);
     }
 
+    @GetMapping("/{organizationId}/search-exam-setters")
+    public ResponseEntity<?> getExamSettersByOrganizationId(@PathVariable Long organizationId) {
+        return organizationService.getExamSettersForSearchByOrganizationId(organizationId);
+    }
+
     //get exam setter invited invitations
     @GetMapping("/{organizationId}/invitations")
     public ResponseEntity<Set<ExamSetterInvitation>> getExamSetterInvitations(@PathVariable long organizationId){
@@ -129,6 +139,13 @@ public class OrganizationController {
     public ResponseEntity<Set<ExamResponse>> getExams(@PathVariable long organizationId){
         Set<ExamResponse> exams = organizationService.getExams(organizationId);
         return ResponseEntity.ok(exams);
+    }
+
+    @GetMapping("/{organizationId}/candidate-groups-search")
+    public ResponseEntity<List<CandidateGroupSearchResponse>> getCandidateGroupsByOrganizationForSearch(
+            @PathVariable Long organizationId) {
+        List<CandidateGroupSearchResponse> candidateGroups = examManagementService.getCandidateGroupsByOrganizationForSearch(organizationId);
+        return ResponseEntity.ok(candidateGroups);
     }
 
 }
