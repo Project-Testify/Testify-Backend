@@ -927,35 +927,53 @@ public class ExamManagementServiceImpl implements ExamManagementService {
             answerText = null;
         }
 
-        // Handle answer saving based on question type
-        if (question.getType().equals(QuestionType.MCQ)) {
-            // Find the selected option for MCQ
-            MCQOption option = mcqOptionRepository.findById(optionId)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid option ID"));
+        // Check if an existing answer already exists for the given session and question
+        CandidateExamAnswer existingAnswer = candidateExamAnswerRepository
+                .findByCandidateExamSessionIdAndQuestionId(session.getId(), question.getId());
 
-            // Create and save the MCQAnswer
-            MCQAnswer mcqAnswer = new MCQAnswer();
-            mcqAnswer.setCandidateExamSession(session);
-            mcqAnswer.setQuestion(question);
-            mcqAnswer.setOption(option);  // Option is set for MCQ
+        if (existingAnswer != null) {
+            // Existing answer found, update it
+            if (question.getType().equals(QuestionType.MCQ)) {
+                // Find the selected option for MCQ
+                MCQOption option = mcqOptionRepository.findById(optionId)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid option ID"));
 
-            candidateExamAnswerRepository.save(mcqAnswer);
-        } else if (question.getType().equals(QuestionType.ESSAY)) {
-            // Create and save the EssayAnswer
-            EssayAnswer essayAnswer = new EssayAnswer();
-            essayAnswer.setCandidateExamSession(session);
-            essayAnswer.setQuestion(question);
-
-            // Set essay answer text, if provided
-            if (answerText != null) {
-                essayAnswer.setAnswerText(answerText);  // Only set if not null
+                MCQAnswer mcqAnswer = (MCQAnswer) existingAnswer;  // Cast to MCQAnswer if existing answer is MCQ
+                mcqAnswer.setOption(option != null ? option : null);  // Update the option
+                candidateExamAnswerRepository.save(mcqAnswer);  // Save updated MCQAnswer
+            } else if (question.getType().equals(QuestionType.ESSAY)) {
+                EssayAnswer essayAnswer = (EssayAnswer) existingAnswer;  // Cast to EssayAnswer if existing answer is Essay
+                essayAnswer.setAnswerText(answerText);  // Update the answerText
+                candidateExamAnswerRepository.save(essayAnswer);  // Save updated EssayAnswer
+            } else {
+                throw new IllegalArgumentException("Unsupported question type");
             }
-
-            candidateExamAnswerRepository.save(essayAnswer);
         } else {
-            throw new IllegalArgumentException("Unsupported question type");
+            // No existing answer found, create a new one
+            if (question.getType().equals(QuestionType.MCQ)) {
+                // Find the selected option for MCQ
+                MCQOption option = mcqOptionRepository.findById(optionId)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid option ID"));
+
+                // Create and save the new MCQAnswer
+                MCQAnswer mcqAnswer = new MCQAnswer();
+                mcqAnswer.setCandidateExamSession(session);
+                mcqAnswer.setQuestion(question);
+                mcqAnswer.setOption(option != null ? option : null);  // Only set if not null
+                candidateExamAnswerRepository.save(mcqAnswer);
+            } else if (question.getType().equals(QuestionType.ESSAY)) {
+                // Create and save the new EssayAnswer
+                EssayAnswer essayAnswer = new EssayAnswer();
+                essayAnswer.setCandidateExamSession(session);
+                essayAnswer.setQuestion(question);
+                essayAnswer.setAnswerText(answerText != null ? answerText : null);  // Only set if not null
+                candidateExamAnswerRepository.save(essayAnswer);
+            } else {
+                throw new IllegalArgumentException("Unsupported question type");
+            }
         }
     }
+
     public ResponseEntity<GenericAddOrUpdateResponse> addProctorsToExam(long examId, List<String> proctorEmails) {
         Optional<Exam> optionalExam = examRepository.findById(examId);
         GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();

@@ -41,8 +41,7 @@ public class GradingServiceImpl implements GradingService {
         return essayQuestions.stream().map(essayQuestion -> {
             // Fetch the candidate's answer for the essay question
             CandidateExamAnswer candidateAnswer = candidateExamAnswerRepository
-                    .findByCandidateExamSessionIdAndQuestionId(candidateExamSession.getId(), essayQuestion.getId())
-                    .orElse(null);
+                    .findByCandidateExamSessionIdAndQuestionId(candidateExamSession.getId(), essayQuestion.getId());
 
             String answerText = "";
             if(candidateAnswer != null) {
