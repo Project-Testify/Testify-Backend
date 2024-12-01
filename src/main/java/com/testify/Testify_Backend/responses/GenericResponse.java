@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 @Data
 public class GenericResponse {
-    private String code;
+    private String success;
     private String message;
-    private Object content;
 }

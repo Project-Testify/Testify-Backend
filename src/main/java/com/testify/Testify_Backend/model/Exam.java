@@ -96,4 +96,16 @@ public class Exam {
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
     private List<Grade> gradings;
 
+    @Column(nullable = false)
+    private boolean realTimeMonitoring = false;
+
+    @Column
+    private String zoomLink;
+
+    @Column(nullable = false)
+    private boolean browserLockdown = false;
+
+    @Column(nullable = false)
+    private boolean hosted = false;
+
 }
