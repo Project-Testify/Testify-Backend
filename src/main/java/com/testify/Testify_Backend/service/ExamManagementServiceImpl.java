@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.service;
 
+import com.testify.Testify_Backend.enums.ExamType;
 import com.testify.Testify_Backend.enums.OrderType;
 import com.testify.Testify_Backend.enums.QuestionType;
 import com.testify.Testify_Backend.model.*;
@@ -15,6 +16,7 @@ import org.antlr.v4.runtime.misc.LogManager;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -374,6 +376,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         return response;
     }
 
+
     @Transactional(readOnly = true)
     public ResponseEntity<QuestionSequenceResponse> getQuestionSequence(long examId) {
         QuestionSequenceResponse response = new QuestionSequenceResponse();
@@ -407,19 +410,42 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         }
     }
 
+    @Override
     @Transactional(readOnly = true)
     public ResponseEntity<QuestionListResponse> getAllQuestionsByExamId(long examId) {
         QuestionListResponse response = new QuestionListResponse();
         List<QuestionResponse> questionResponses = new ArrayList<>();
 
         try {
+            // Extract username from JWT
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+            if (currentUserEmail == null) {
+                throw new IllegalStateException("No authenticated user found");
+            }
+
+            // Fetch the role of the user
+            String role = userRepository.findByEmail(currentUserEmail)
+                    .map(user -> user.getRole().name()) // Convert UserRole enum to String
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
             // Fetch questions associated with the exam ID that are not deleted
             List<Question> questions = questionRepository.findAllActiveQuestionsByExamId(examId);
+            Optional<Exam> examOptional = examRepository.findById(examId);
+
+            if (examOptional.isEmpty()) {
+                throw new IllegalArgumentException("Exam not found for ID: " + examId);
+            }
+
+            System.out.println(role);
+
+            Exam exam = examOptional.get();
+            ExamType examType = exam.getExamType();
 
             // Check if questions are found
             if (questions.isEmpty()) {
                 // Return null instead of an error message
-                return ResponseEntity.ok(null); // Return 200 OK with null body
+                return ResponseEntity.ok(null);
             }
 
             for (Question question : questions) {
@@ -434,20 +460,25 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                             .map(option -> MCQOptionResponse.builder()
                                     .optionId(option.getId())
                                     .optionText(option.getOptionText())
-                                    .correct(option.isCorrect())
-                                    .marks(option.getMarks())
+                                    // Exclude 'correct' flag if the user is a candidate
+                                    .correct(!role.equals("CANDIDATE") && option.isCorrect())
+                                    .marks(role.equals("CANDIDATE") ? 0.00 : option.getMarks())
                                     .build())
                             .collect(Collectors.toList());
                 }
+
                 // Populate cover points for essays
                 else if (question instanceof Essay) {
-                    coverPoints = ((Essay) question).getCoverPoints().stream()
-                            .map(point -> EssayCoverPointResponse.builder()
-                                    .coverPointId(point.getId())
-                                    .coverPointText(point.getCoverPointText())
-                                    .marks(point.getMarks())
-                                    .build())
-                            .collect(Collectors.toList());
+                    // Exclude cover points if the user is a candidate
+                    if (!role.equals("CANDIDATE")) {
+                        coverPoints = ((Essay) question).getCoverPoints().stream()
+                                .map(point -> EssayCoverPointResponse.builder()
+                                        .coverPointId(point.getId())
+                                        .coverPointText(point.getCoverPointText())
+                                        .marks(point.getMarks())
+                                        .build())
+                                .collect(Collectors.toList());
+                    }
                 }
 
                 // Build the QuestionResponse object
@@ -464,6 +495,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
             // Set the response with the questions
             response.setExamId(examId);
+            response.setExamType(examType);
             response.setQuestions(questionResponses);
             return ResponseEntity.ok(response);  // Return 200 OK with questions
 
@@ -478,7 +510,6 @@ public class ExamManagementServiceImpl implements ExamManagementService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);  // Return 500 Internal Server Error
         }
     }
-
 
 
 
@@ -828,9 +859,15 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     @Override
     @Transactional
     public ExamSessionResponse startExam(StartExamRequest request) {
-        // Validate Candidate
-        Candidate candidate = candidateRepository.findById(request.getCandidateId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid candidate ID"));
+        // Get the username (email) from SecurityContextHolder
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (currentUserEmail == null) {
+            throw new IllegalStateException("No authenticated user found");
+        }
+
+        Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Candidate not found for email: " + currentUserEmail));
 
         // Validate Exam
         Exam exam = examRepository.findById(request.getExamId())
