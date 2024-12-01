@@ -9,5 +9,6 @@ import java.util.Optional;
 @Repository
 public interface ExamSessionRepository extends JpaRepository<CandidateExamSession, Long> {
     Optional<CandidateExamSession> findByCandidateIdAndExamIdAndInProgress(Long candidateId, Long examId, Boolean inProgress);
+    Optional<CandidateExamSession> findByExamIdAndCandidateId(Long examId, Long candidateId);
 }
 
