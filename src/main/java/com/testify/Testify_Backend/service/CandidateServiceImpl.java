@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -166,10 +167,18 @@ public class CandidateServiceImpl implements CandidateService {
 
 
     @Override
-    public CandidateProfile getCandidateProfile(){
-        String currentUserEmail = "john.doe@example.com";
-        Candidate candidate = candidateRepository.findByEmail(currentUserEmail).get();
+    public CandidateProfile getCandidateProfile() {
+        // Get the username (email) from SecurityContextHolder
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
+        if (currentUserEmail == null) {
+            throw new IllegalStateException("No authenticated user found");
+        }
+
+        Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Candidate not found for email: " + currentUserEmail));
+
+        // Map and return CandidateProfile
         return modelMapper.map(candidate, CandidateProfile.class);
     }
 
