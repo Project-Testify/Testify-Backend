@@ -2,12 +2,10 @@ package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.enums.ExamStatus;
 import com.testify.Testify_Backend.model.Candidate;
+import com.testify.Testify_Backend.model.CandidateExamSession;
 import com.testify.Testify_Backend.model.Exam;
 import com.testify.Testify_Backend.model.Organization;
-import com.testify.Testify_Backend.repository.CandidateRepository;
-import com.testify.Testify_Backend.repository.ExamRepository;
-import com.testify.Testify_Backend.repository.OrganizationRepository;
-import com.testify.Testify_Backend.repository.UserRepository;
+import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateResponse;
@@ -55,6 +53,9 @@ public class CandidateServiceImpl implements CandidateService {
     @Autowired
     private GenericResponse genericResponse;
 
+    @Autowired
+    private final ExamSessionRepository examSessionRepository;
+
     @Override
     public List<CandidateExam> getCandidateExams(String status) {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -65,10 +66,10 @@ public class CandidateServiceImpl implements CandidateService {
         Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Candidate not found"));
 
-        // Get exams directly associated with the candidate
+
         List<Exam> candidateExams = examRepository.findExamsByCandidateId(candidate.getId());
 
-        // Get all public exams
+
         List<Exam> publicExams = examRepository.findAllPublicExams();
 
         // Combine both lists, ensuring no duplicates
@@ -83,10 +84,11 @@ public class CandidateServiceImpl implements CandidateService {
             // Filter exams based on the provided status
             return allExams.stream()
                     .map(exam -> {
-                        return getCandidateExam(exam, now);
+                        CandidateExamSession candidateExamSession = examSessionRepository.findByExamIdAndCandidateId(exam.getId(), candidate.getId())
+                                .orElse(null);
+                        return getCandidateExam(exam, now, candidateExamSession);
                     })
                     .filter(candidateExam -> {
-                        // Apply the status filter
                         if (status == null) {
                             return true;
                         }
@@ -99,7 +101,6 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public CandidateExam getCandidateExamDetails(Integer examId) {
-        // Get the username (email) from SecurityContextHolder
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
         if (currentUserEmail == null) {
@@ -125,19 +126,25 @@ public class CandidateServiceImpl implements CandidateService {
 
         // Determine the status of the exam
         LocalDateTime now = LocalDateTime.now();
-        return getCandidateExam(exam, now);
+        CandidateExamSession candidateExamSession = examSessionRepository.findByExamIdAndCandidateId(exam.getId(), candidate.getId())
+                .orElse(null);
+        return getCandidateExam(exam, now, candidateExamSession);
     }
 
     @NotNull
-    private CandidateExam getCandidateExam(Exam exam, LocalDateTime now) {
+    private CandidateExam getCandidateExam(Exam exam, LocalDateTime now, CandidateExamSession session) {
         CandidateExam candidateExam = modelMapper.map(exam, CandidateExam.class);
 
         if (now.isBefore(exam.getStartDatetime())) {
             candidateExam.setStatus(ExamStatus.UPCOMING);
-        } else if (now.isAfter(exam.getEndDatetime())) {
+        } else if (session == null && now.isAfter(exam.getEndDatetime())) {
             candidateExam.setStatus(ExamStatus.EXPIRED);
-        } else {
+        } else if (session == null) {
+            candidateExam.setStatus(ExamStatus.AVAILABLE);
+        } else if (session.getInProgress()) {
             candidateExam.setStatus(ExamStatus.ONGOING);
+        } else {
+            candidateExam.setStatus(ExamStatus.COMPLETED);
         }
 
         return candidateExam;

@@ -153,6 +153,12 @@ public class ExamManagementController {
             return new ResponseEntity<>("Error saving answer: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
+    @PutMapping("/{sessionId}/submit")
+    public ResponseEntity<String> submitExam(@PathVariable Long sessionId) {
+        examManagementService.markSessionAsComplete(sessionId);
+        return ResponseEntity.ok("Exam submitted successfully.");
+    }
     
     @PostMapping("/{examId}/proctors")
     public ResponseEntity<GenericAddOrUpdateResponse> addOrUpdateProctors(

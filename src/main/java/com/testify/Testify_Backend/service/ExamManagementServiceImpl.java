@@ -974,6 +974,16 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         }
     }
 
+    @Override
+    @Transactional
+    public void markSessionAsComplete(Long sessionId) {
+        CandidateExamSession session = examSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid session ID"));
+
+        session.setInProgress(false);
+        examSessionRepository.save(session);
+    }
+
     public ResponseEntity<GenericAddOrUpdateResponse> addProctorsToExam(long examId, List<String> proctorEmails) {
         Optional<Exam> optionalExam = examRepository.findById(examId);
         GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
