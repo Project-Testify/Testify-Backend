@@ -1,4 +1,5 @@
 package com.testify.Testify_Backend.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.testify.Testify_Backend.converter.QuestionSequenceConverter;
 import com.testify.Testify_Backend.enums.ExamType;
 import com.testify.Testify_Backend.enums.OrderType;
@@ -97,6 +98,7 @@ public class Exam {
     private List<Long> questionSequence;
 
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Grade> gradings;
 
 }
