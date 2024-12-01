@@ -43,4 +43,6 @@ public class ExamSetter extends User{
 
     @OneToMany(mappedBy = "moderator")
     private Set<Exam> moderatedExams;
+
+
 }

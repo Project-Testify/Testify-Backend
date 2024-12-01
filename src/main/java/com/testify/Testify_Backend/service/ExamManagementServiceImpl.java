@@ -46,6 +46,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final MCQOptionRepository mcqOptionRepository;
     private final CandidateGroupRepository candidateGroupRepository;
     private final CandidateGroupRepository candidateGroupRepository;
+    private final EmailSender emailSender;
     private final ModelMapper modelMapper;
 
 
@@ -79,6 +80,9 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                     .endDatetime(examRequest.getEndDatetime())
                     .isPrivate(true)
                     .orderType(examRequest.getOrderType() != null ? examRequest.getOrderType() : OrderType.FIXED)
+                    .browserLockdown(false)
+                    .realTimeMonitoring(false)
+                    .hosted(false)
                     .build();
             exam = examRepository.save(exam);
 
@@ -675,6 +679,11 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                 // Handle question sequence (assuming it's never null)
                 .questionSequence(exam.getQuestionSequence())
 
+                .browserLockdown(exam.isBrowserLockdown())
+                .realTimeMonitoring(exam.isRealTimeMonitoring())
+                .zoomLink(exam.getZoomLink())
+                .hosted(exam.isHosted())
+
                 .build();
 
         return examResponse;
@@ -810,28 +819,23 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
     @Transactional(readOnly = true)
     public ResponseEntity<List<GradeResponse>> getGradesByExamId(Long examId) {
-        List<GradeResponse> gradeResponses;
-
         try {
             List<Grade> grades = gradeRepository.findByExamId(examId);
 
             log.info("Grades: {}", grades);
 
-            if (grades.isEmpty()) {
-                throw new RuntimeException("No grades found for the given exam ID");
-            }
-
-            gradeResponses = grades.stream()
+            // Convert grades to responses, even if the list is empty
+            List<GradeResponse> gradeResponses = grades.stream()
                     .map(grade -> new GradeResponse(grade.getId(), grade.getGrade(), grade.getMinMarks(), grade.getMaxMarks()))
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(gradeResponses);
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception ex) {
+            log.error("An error occurred while fetching grades for examId {}: {}", examId, ex.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
 
     @Transactional
     public ResponseEntity<GenericAddOrUpdateResponse> updateGrades(Long examId, List<GradeRequest> gradeRequestList) {
@@ -1193,7 +1197,154 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         return responseList; // This will return a list of conflicting exams or empty if none found
     }
 
+    @Transactional
+    public GenericResponse updateRealTimeMonitoring(Long examId, RealTimeMonitoringRequest dto) {
+        // Fetch the exam by ID
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        // Update the fields
+        exam.setRealTimeMonitoring(dto.isRealTimeMonitoring());
+        if (dto.isRealTimeMonitoring()) {
+            // If activating, set the Zoom link
+            exam.setZoomLink(dto.getZoomLink());
+        } else {
+            // If deactivating, clear the Zoom link
+            exam.setZoomLink(null);
+        }
+
+        // Save the updated exam
+        examRepository.save(exam);
+
+        // Create and return a success response
+        String message = dto.isRealTimeMonitoring() ?
+                "Real-time monitoring activated successfully." :
+                "Real-time monitoring deactivated successfully.";
+        return new GenericResponse("true", message);
+    }
+
+    public RealTimeMonitoringResponse getRealTimeMonitoringStatus(Long examId) {
+        // Find the exam by ID
+        Exam exam = examRepository.findById(examId).orElseThrow(() -> new RuntimeException("Exam not found"));
+
+        // Return the real-time monitoring status and Zoom link
+        return new RealTimeMonitoringResponse(exam.isRealTimeMonitoring(), exam.getZoomLink());
+    }
+
+    @Transactional
+    public GenericResponse updateBrowserLockdown(Long examId, boolean browserLockdown) {
+        // Fetch the exam by ID
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        // Update the browserLockdown status
+        exam.setBrowserLockdown(browserLockdown);
+        examRepository.save(exam);
+
+        // Construct and return the response
+        String message = browserLockdown ?
+                "Browser lockdown activated successfully." :
+                "Browser lockdown deactivated successfully.";
+        return new GenericResponse("true", message);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean getBrowserLockdownStatus(Long examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+        return exam.isBrowserLockdown();
+    }
+
+    @Transactional
+    public GenericResponse updateHostedStatus(Long examId, boolean hosted) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        exam.setHosted(hosted);
+        examRepository.save(exam);
+
+        if (hosted) {
+            notifyCandidates(exam);
+        }
+
+        String message = hosted ? "Exam hosting activated successfully." : "Exam hosting deactivated successfully.";
+        return new GenericResponse("true", message);
+    }
+
+    private void notifyCandidates(Exam exam) {
+        Set<Candidate> candidates = exam.getCandidates();
+        if (candidates == null || candidates.isEmpty()) {
+            return; // No candidates to notify
+        }
+
+        String emailSubject = "Exam Hosted Notification";
+        String emailContent = String.format(
+                """
+                Dear Candidate,
+    
+                The exam "%s" has been hosted. Please log in to your account for further details.
+    
+                Exam Details:
+                Title: %s
+                Start Date and Time: %s
+                End Date and Time: %s
+    
+                Best regards,
+                Testify Team
+                """,
+                exam.getTitle(),
+                exam.getTitle(),
+                exam.getStartDatetime(),
+                exam.getEndDatetime()
+        );
+
+        for (Candidate candidate : candidates) {
+            String email = candidate.getEmail(); // Assuming `Candidate` inherits `email` from `User`
+            try {
+                emailSender.send(email, emailContent);
+            } catch (Exception e) {
+                log.error("Failed to send email to candidate: {}", email, e);
+            }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public boolean getHostedStatus(Long examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        return exam.isHosted();
+    }
+
+    @Transactional
+    public void assignModerator(Long examId, String moderatorEmail) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        log.info("Exam found with ID: {}", examId);
+        log.info("Searching for moderator with email: {}", moderatorEmail);
+
+        ExamSetter moderator = examSetterRepository.findByEmail(moderatorEmail)
+                .orElseThrow(() -> new RuntimeException("Exam setter not found with email: " + moderatorEmail));
+
+        log.info("Moderator found with email: {}", moderatorEmail);
 
 
+        exam.setModerator(moderator);
+        examRepository.save(exam);
+    }
+
+    @Transactional
+    public ModeratorResponse getModeratorDetails(Long examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new RuntimeException("Exam not found with ID: " + examId));
+
+        ExamSetter moderator = exam.getModerator();
+        if (moderator == null) {
+            return null; // Return null if no moderator is assigned
+        }
+
+        return new ModeratorResponse(moderator.getEmail(), moderator.getFirstName(), moderator.getLastName());
+    }
 
 }
