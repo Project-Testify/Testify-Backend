@@ -1,10 +1,13 @@
 package com.testify.Testify_Backend.controller;
 
-import com.testify.Testify_Backend.model.Exam;
-import com.testify.Testify_Backend.model.Grade;
 import com.testify.Testify_Backend.requests.exam_management.*;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
 import com.testify.Testify_Backend.responses.GenericDeleteResponse;
+import com.testify.Testify_Backend.responses.SaveAnswerResponse;
+import com.testify.Testify_Backend.responses.exam_management.*;
+import com.testify.Testify_Backend.service.ExamManagementService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.exam_management.*;
 import com.testify.Testify_Backend.service.ExamManagementService;
@@ -49,7 +52,7 @@ public class ExamManagementController {
 
     @PutMapping("/{examId}/mcq")
     public GenericAddOrUpdateResponse<MCQUpdateRequest> updateMCQQuestion(@RequestBody MCQUpdateRequest mcqUpdateRequest) {
-        return examManagementService.updateMCQQuestion(mcqUpdateRequest);// Return 200 OK response
+        return examManagementService.updateMCQQuestion(mcqUpdateRequest);
     }
 
     @PostMapping("/{examId}/essay")
@@ -129,6 +132,28 @@ public class ExamManagementController {
         return examManagementService.updateGrades(examId, gradeRequestList);
     }
 
+    @PostMapping("/start")
+    public ResponseEntity<ExamSessionResponse > startExam(@RequestBody StartExamRequest request) {
+        ExamSessionResponse  session = examManagementService.startExam(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(session);
+    }
+
+    @PostMapping("/save-answer")
+    public ResponseEntity<String> saveAnswer(@RequestBody SaveAnswerRequest request) {
+        try {
+            // Call the service method to save the answer
+            examManagementService.saveAnswer(
+                    request.getSessionId(),
+                    request.getQuestionId(),
+                    request.getOptionId(),
+                    request.getAnswerText()
+            );
+            return new ResponseEntity<>("Answer saved successfully", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error saving answer: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+    
     @PostMapping("/{examId}/proctors")
     public ResponseEntity<GenericAddOrUpdateResponse> addOrUpdateProctors(
             @PathVariable Long examId,
