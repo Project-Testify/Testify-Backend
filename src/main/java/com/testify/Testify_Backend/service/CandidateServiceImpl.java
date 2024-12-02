@@ -58,7 +58,8 @@ public class CandidateServiceImpl implements CandidateService {
     @Override
     public List<CandidateExam> getCandidateExams(String status) {
         // Get the current user's email (you can adapt this to your actual method of getting the logged-in user's email)
-        String currentUserEmail = "testcan@gmail.com";
+        String currentUserEmail = UserUtil.getCurrentUserName();
+        log.info("Current user email: {}", currentUserEmail);
         Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Candidate not found"));
 
@@ -96,7 +97,7 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public CandidateExam getCandidateExamDetails(Integer examId) {
-        String currentUserEmail = "testcan@gmail.com";
+        String currentUserEmail = UserUtil.getCurrentUserName();
         Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Candidate not found"));
 

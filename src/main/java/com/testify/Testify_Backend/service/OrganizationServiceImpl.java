@@ -49,6 +49,8 @@ public class OrganizationServiceImpl implements OrganizationService{
 
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private ExamSetterOrganizationRepository examSetterOrganizationRepository;
 
     @Override
     public ResponseEntity<GenericAddOrUpdateResponse> addSetterToOrganization(long organizationId, AddExamSetterRequest request) {
@@ -253,8 +255,18 @@ public class OrganizationServiceImpl implements OrganizationService{
 
     @Override
     public Set<ExamSetter> getExamSetters(long organizationId) {
-        Organization organization = organizationRepository.findById(organizationId).orElseThrow(() -> new IllegalArgumentException("Organization not found"));
-        return organization.getExamSetters();
+        // Fetch the organization and its associated ExamSetters
+        Organization organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+
+        // Fetch active ExamSetter IDs from ExamSetterOrganization table
+        List<String> activeExamSetterIDs = examSetterOrganizationRepository.findActiveExamSetterIDs(String.valueOf(organizationId));
+
+        // Filter ExamSetters linked to the organization based on active IDs
+        return organization.getExamSetters().stream()
+                .filter(examSetter -> activeExamSetterIDs.contains(String.valueOf(examSetter.getId())))
+                .collect(Collectors.toSet());
+
     }
 
     @Override

@@ -91,6 +91,7 @@ public class Exam {
             joinColumns = @JoinColumn(name = "exam_id"),
             inverseJoinColumns = @JoinColumn(name = "candidate_id")
     )
+
     private Set<Candidate> candidates;
 
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)

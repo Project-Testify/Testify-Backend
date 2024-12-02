@@ -11,4 +11,6 @@ public interface ExamSetterService {
     long checkSetterRegistration(String token);
 
     GenericAddOrUpdateResponse addSetterToOrganization(String token);
+
+    GenericAddOrUpdateResponse deleteSetter(String setterId, String organizationId);
 }
