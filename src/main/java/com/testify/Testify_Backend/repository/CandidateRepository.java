@@ -22,6 +22,6 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
     List<Candidate> findCandidatesAssignedToExamWithConflictingExams(Long examId, LocalDateTime startDatetime, LocalDateTime endDatetime);
 
     boolean existsByEmail(String currentUserEmail);
-    Set<Candidate> findAllByEmailIn(List<String> emails);
+//    Set<Candidate> findAllByEmailIn(List<String> emails);
 }
 
