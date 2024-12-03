@@ -3,12 +3,16 @@ package com.testify.Testify_Backend.controller;
 import com.testify.Testify_Backend.model.Candidate;
 import com.testify.Testify_Backend.model.Organization;
 import com.testify.Testify_Backend.repository.CandidateRepository;
+import com.testify.Testify_Backend.requests.exam_management.CandidateExamAnswerRequest;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateProfile;
 import com.testify.Testify_Backend.responses.candidate_management.OrganizationCandidateView;
+import com.testify.Testify_Backend.responses.exam_management.CandidateExamAnswerResponse;
 import com.testify.Testify_Backend.service.CandidateService;
+import com.testify.Testify_Backend.service.ExamManagementService;
+import com.testify.Testify_Backend.service.ExamManagementServiceImpl;
 import com.testify.Testify_Backend.utils.VarList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,6 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CandidateController {
     private final CandidateService candidateService;
+    private final ExamManagementService examManagementService;
 
     @GetMapping("/exams")
     public ResponseEntity<List<CandidateExam>> getCandidateExams(@RequestParam(value = "status", required = false) String status) {
@@ -92,6 +97,11 @@ public class CandidateController {
             return new ResponseEntity<>("Something Went Wrong" + e, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+    }
+
+    @PostMapping("/check-active-session")
+    public CandidateExamAnswerResponse getCandidateAnswers(@RequestBody CandidateExamAnswerRequest request) {
+        return examManagementService.getCandidateAnswers(request.getCandidateId());
     }
 
 }

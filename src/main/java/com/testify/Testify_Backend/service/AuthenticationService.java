@@ -54,6 +54,8 @@ public class AuthenticationService {
 
     private final VerificationRequestRepository verificationRequestRepository;
 
+    private final ExamSetterOrganizationRepository examSetterOrganizationRepository;
+
     private User user;
 
 
@@ -114,6 +116,14 @@ public class AuthenticationService {
                     invitation.setAccepted(true);
                     examSetterInvitationRepository.save(invitation);
                 });
+
+//                add to examSetterOrganization
+                ExamSetterOrganization examSetterOrganization = new ExamSetterOrganization();
+                examSetterOrganization.setOrganizationID(String.valueOf(organization.getId()));
+                examSetterOrganization.setExamSetterID(String.valueOf(examSetter.getId()));
+                examSetterOrganizationRepository.save(examSetterOrganization);
+
+
             } else if (request.getRole().equals(UserRole.ORGANIZATION)) {
                 System.out.println("Organization");
                 Organization organization = Organization.builder()

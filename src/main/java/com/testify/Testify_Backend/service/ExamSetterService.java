@@ -22,4 +22,6 @@ public interface ExamSetterService {
     List<ModerateExamResponse> getModeratingExams(long examSetterId);
 
     void addCommentToCandidate(Long candidateId, Long examId, String content);
+
+    GenericAddOrUpdateResponse deleteSetter(String setterId, String organizationId);
 }

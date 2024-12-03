@@ -1,17 +1,19 @@
 package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.*;
-import com.testify.Testify_Backend.repository.CandidateExamAnswerRepository;
-import com.testify.Testify_Backend.repository.ExamSessionRepository;
-import com.testify.Testify_Backend.repository.GradeRepository;
-import com.testify.Testify_Backend.repository.QuestionRepository;
+import com.testify.Testify_Backend.repository.*;
+import com.testify.Testify_Backend.requests.exam_management.ExamCandidateGradeRequest;
 import com.testify.Testify_Backend.responses.EssayDetailsResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamCandidateGradeResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +25,9 @@ public class GradingServiceImpl implements GradingService {
     private final CandidateExamAnswerRepository candidateExamAnswerRepository;
     private final GradeRepository gradeRepository;
     private final ExamSessionRepository examSessionRepository;
+    private final ExamCandidateGradeRepository examCandidateGradeRepository;
+    private final ExamRepository examRepository;
+    private final CandidateRepository candidateRepository;
 
     @Override
     @Transactional
@@ -41,8 +46,7 @@ public class GradingServiceImpl implements GradingService {
         return essayQuestions.stream().map(essayQuestion -> {
             // Fetch the candidate's answer for the essay question
             CandidateExamAnswer candidateAnswer = candidateExamAnswerRepository
-                    .findByCandidateExamSessionIdAndQuestionId(candidateExamSession.getId(), essayQuestion.getId())
-                    .orElse(null);
+                    .findByCandidateExamSessionIdAndQuestionId(candidateExamSession.getId(), essayQuestion.getId());
 
             String answerText = "";
             if(candidateAnswer != null) {
@@ -77,5 +81,74 @@ public class GradingServiceImpl implements GradingService {
         }
 
         return grades;
+    }
+
+    @Override
+    @Transactional
+    public List<Map<String, String>> getQuestionAndOptionBySessionId(Long sessionId) {
+        List<CandidateExamAnswer> answers = candidateExamAnswerRepository.findByCandidateExamSessionId(sessionId);
+
+        // Transform the list of answers into a list of maps containing questionId and optionId
+        return answers.stream()
+                .map(answer -> {
+                    Map<String, String> result = new HashMap<>();
+                    result.put("questionId", String.valueOf(answer.getQuestion().getId()));
+                    CandidateExamAnswer candidateAnswer = candidateExamAnswerRepository
+                            .findByCandidateExamSessionIdAndQuestionId(sessionId, answer.getQuestion().getId());
+
+                    MCQOption optionId = null;
+                    if(candidateAnswer != null) {
+                        optionId = candidateExamAnswerRepository.findMcqAnswerTextById(candidateAnswer.getId());
+                    }
+                    if(optionId != null) {
+                        result.put("optionId", String.valueOf(optionId.getId()));
+                    }else{
+                        result.put("optionId", null);
+                    }
+
+                    return result;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public String  setExamCandidateGrade(ExamCandidateGradeRequest examCandidateGradeRequest){
+        ExamCandidateGrade examCandidateGrade = new ExamCandidateGrade();
+        examCandidateGrade.setExamID(examCandidateGradeRequest.getExamID());
+        examCandidateGrade.setCandidateID(examCandidateGradeRequest.getCandidateID());
+        examCandidateGrade.setStatus(examCandidateGradeRequest.getStatus());
+        examCandidateGrade.setGrade(examCandidateGradeRequest.getGrade());
+        examCandidateGrade.setScore(examCandidateGradeRequest.getScore());
+        examCandidateGradeRepository.save(examCandidateGrade);
+        return "Grade set successfully";
+    }
+
+    @Override
+    @Transactional
+    public List<ExamCandidateGradeResponse> getExamCandidateGrade() {
+//        initialize the response list
+        List<ExamCandidateGradeResponse> examCandidateGradeResponses = new ArrayList<>();
+        List<ExamCandidateGrade> examCandidateGrades = examCandidateGradeRepository.findAll();
+        if (examCandidateGrades == null || examCandidateGrades.isEmpty()) {
+            throw new IllegalArgumentException("No exam candidate grades found");
+        }
+
+        examCandidateGrades.forEach(examCandidateGrade -> {
+            ExamCandidateGradeResponse response = new ExamCandidateGradeResponse();
+            Exam exam = examRepository.findById(Long.parseLong(examCandidateGrade.getExamID().toString())).orElseThrow(() -> new IllegalArgumentException("Exam not found"));
+            Candidate candidate = candidateRepository.findById(Long.parseLong(examCandidateGrade.getCandidateID().toString())).orElseThrow(() -> new IllegalArgumentException("Candidate not found"));
+            response.setExamID(String.valueOf(exam.getId()));
+            response.setCandidateID(String.valueOf(candidate.getId()));
+            response.setExamTitle(exam.getTitle());
+            response.setCandidateName(candidate.getFirstName() + " " + candidate.getLastName());
+            response.setStatus(examCandidateGrade.getStatus());
+            response.setGrade(examCandidateGrade.getGrade());
+            response.setScore(examCandidateGrade.getScore());
+
+            examCandidateGradeResponses.add(response);
+            });
+
+        return examCandidateGradeResponses;
     }
 }

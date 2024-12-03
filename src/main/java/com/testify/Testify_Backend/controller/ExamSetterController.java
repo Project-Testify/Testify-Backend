@@ -45,6 +45,12 @@ public class ExamSetterController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{setterId}/{organizationId}/deleteSetter")
+    public ResponseEntity<GenericAddOrUpdateResponse> deleteSetter(@PathVariable("setterId") String setterId, @PathVariable("organizationId") String organizationId) {
+        GenericAddOrUpdateResponse response = examSetterService.deleteSetter(setterId, organizationId);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/proctor/{proctorId}/{organizationId}")
     public ResponseEntity<List<ExamResponse>> getExamsForProctor(@PathVariable Long proctorId, @PathVariable Long organizationId) {
         List<ExamResponse> exams = examSetterService.getExamsForProctor(proctorId, organizationId);
