@@ -962,6 +962,8 @@ public class ExamManagementServiceImpl implements ExamManagementService {
             throw new IllegalArgumentException("Unsupported question type");
         }
     }
+
+    @Transactional
     public ResponseEntity<GenericAddOrUpdateResponse> addProctorsToExam(long examId, List<String> proctorEmails) {
         Optional<Exam> optionalExam = examRepository.findById(examId);
         GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
