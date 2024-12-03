@@ -36,4 +36,10 @@ public class ExamSetterController {
         GenericAddOrUpdateResponse response = examSetterService.addSetterToOrganization(token);
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/{setterId}/{organizationId}/deleteSetter")
+    public ResponseEntity<GenericAddOrUpdateResponse> deleteSetter(@PathVariable("setterId") String setterId, @PathVariable("organizationId") String organizationId) {
+        GenericAddOrUpdateResponse response = examSetterService.deleteSetter(setterId, organizationId);
+        return ResponseEntity.ok(response);
+    }
 }

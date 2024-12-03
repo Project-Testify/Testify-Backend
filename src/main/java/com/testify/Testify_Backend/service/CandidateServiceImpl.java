@@ -106,6 +106,7 @@ public class CandidateServiceImpl implements CandidateService {
         if (currentUserEmail == null) {
             throw new IllegalStateException("No authenticated user found");
         }
+
         Candidate candidate = candidateRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Candidate not found"));
 
