@@ -1099,6 +1099,39 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         examSessionRepository.save(session);
     }
 
+    @Override
+    @Transactional
+    public CandidateExamAnswerResponse getCandidateAnswers(Long candidateId) {
+        CandidateExamSession session = examSessionRepository.findInProgressSession(candidateId);
+
+        if (session == null) {
+            throw new RuntimeException("No exam session in progress for the candidate.");
+        }
+
+        List<CandidateExamAnswerResponse.AnswerDetail> answerDetails = new ArrayList<>();
+        for (CandidateExamAnswer answer : session.getAnswers()) {
+            if (answer instanceof MCQAnswer) {
+                MCQAnswer mcqAnswer = (MCQAnswer) answer;
+                answerDetails.add(new CandidateExamAnswerResponse.AnswerDetail(
+                        answer.getQuestion().getId(),
+                        "MCQ",
+                        mcqAnswer.getOption() != null ? mcqAnswer.getOption().getId() : null
+                ));
+            } else {
+                answerDetails.add(new CandidateExamAnswerResponse.AnswerDetail(
+                        answer.getQuestion().getId(),
+                        "Essay",
+                        ((EssayAnswer) answer).getAnswerText()
+                ));
+            }
+        }
+
+        return new CandidateExamAnswerResponse(
+                session.getExam().getId(),
+                answerDetails
+        );
+    }
+
     public ResponseEntity<GenericAddOrUpdateResponse> addProctorsToExam(long examId, List<String> proctorEmails) {
         Optional<Exam> optionalExam = examRepository.findById(examId);
         GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
