@@ -33,6 +33,8 @@ public abstract class Question {
     @Column(nullable = false)
     private String difficultyLevel;
 
+    @Column
+    private String comment; // New attribute
     @Enumerated(EnumType.STRING)
     @Column(name = "question_type", nullable = false)
     private QuestionType type;

@@ -104,4 +104,16 @@ public class Exam {
     @JsonIgnore
     private List<Grade> gradings;
 
+    @Column(nullable = false)
+    private boolean realTimeMonitoring = false;
+
+    @Column
+    private String zoomLink;
+
+    @Column(nullable = false)
+    private boolean browserLockdown = false;
+
+    @Column(nullable = false)
+    private boolean hosted = false;
+
 }

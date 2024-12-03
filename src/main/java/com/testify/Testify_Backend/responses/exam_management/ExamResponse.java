@@ -1,6 +1,7 @@
 package com.testify.Testify_Backend.responses.exam_management;
 
 import com.testify.Testify_Backend.enums.OrderType;
+import jakarta.persistence.Column;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -31,4 +32,8 @@ public class ExamResponse {
     private OrderType orderType;
     private FixedOrderResponse fixedOrder;
     private RandomOrderResponse randomOrder;
+    private boolean realTimeMonitoring;
+    private String zoomLink;
+    private boolean browserLockdown;
+    private boolean hosted;
 }

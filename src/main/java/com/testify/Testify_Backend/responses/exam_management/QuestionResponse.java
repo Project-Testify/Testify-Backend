@@ -14,6 +14,7 @@ public class QuestionResponse {
     private String questionText;
     private String questionType; // "MCQ" or "Essay"
     private String difficultyLevel; // "EASY", "MEDIUM" or "HARD"
+    private String comment; // New attribute
     private List<MCQOptionResponse> options; // List of options for MCQs
     private List<EssayCoverPointResponse> coverPoints; // List of cover points for essays
 }

@@ -217,10 +217,10 @@ public class AuthenticationService {
             // Log the confirmation link
             log.info("Confirmation link: {}", link);
 
-//            emailSender.send(
-//                    request.getEmail(),
-//                    buildEmail(request.getEmail(), link)
-//            );
+            emailSender.send(
+                    request.getEmail(),
+                    buildEmail(request.getEmail(), link)
+            );
 
             //TODO: save jwt token
             var jwtToken = jwtService.generateToken(savedUser);
