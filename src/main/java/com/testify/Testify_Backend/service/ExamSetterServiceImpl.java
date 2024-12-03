@@ -88,14 +88,15 @@ public class ExamSetterServiceImpl implements ExamSetterService {
 
     @Override
     @Transactional
-    public Set<ExamResponse> getExamsForProctor(Long proctorId, Long organizationId) {
-        Set<Exam> exams = examRepository.findByProctorIdAndOrganizationId(proctorId, organizationId);
-        Set<ExamResponse> examResponses = new HashSet<>();
+    public List<ExamResponse> getExamsForProctor(Long proctorId, Long organizationId) {
+        List<Exam> exams = examRepository.findByProctorIdAndOrganizationId(proctorId, organizationId); // Ensure repository method returns a List
+        List<ExamResponse> examResponses = new ArrayList<>();
         for (Exam exam : exams) {
             examResponses.add(modelMapper.map(exam, ExamResponse.class));
         }
         return examResponses;
     }
+
 
     @Override
     public Set<CandidateResponse> getCandidatesForExam(Long examId) {
@@ -104,7 +105,9 @@ public class ExamSetterServiceImpl implements ExamSetterService {
         for (Candidate candidate : candidates) {
             candidateResponses.add(modelMapper.map(candidate, CandidateResponse.class));
         }
+
         return candidateResponses;
+    }
     public List<ModerateExamResponse> getModeratingExams(long examSetterId) {
         return examRepository.findByModeratorId(examSetterId).stream()
                 .map(exam -> new ModerateExamResponse(

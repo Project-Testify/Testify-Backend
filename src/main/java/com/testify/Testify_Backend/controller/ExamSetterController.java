@@ -46,8 +46,8 @@ public class ExamSetterController {
     }
 
     @GetMapping("/proctor/{proctorId}/{organizationId}")
-    public ResponseEntity<Set<ExamResponse>> getExamsForProctor(@PathVariable Long proctorId, @PathVariable Long organizationId) {
-        Set<ExamResponse> exams = examSetterService.getExamsForProctor(proctorId, organizationId);
+    public ResponseEntity<List<ExamResponse>> getExamsForProctor(@PathVariable Long proctorId, @PathVariable Long organizationId) {
+        List<ExamResponse> exams = examSetterService.getExamsForProctor(proctorId, organizationId);
         return ResponseEntity.ok(exams);
     }
 

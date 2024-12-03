@@ -33,7 +33,7 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     List<Exam> findAllPublicExams();
 
     @Query("SELECT e FROM Exam e JOIN e.proctors p WHERE p.id = :proctorId AND e.organization.id = :organizationId")
-    Set<Exam> findByProctorIdAndOrganizationId(@Param("proctorId") Long proctorId, @Param("organizationId") Long organizationId);
+    List<Exam> findByProctorIdAndOrganizationId(@Param("proctorId") Long proctorId, @Param("organizationId") Long organizationId);
 
 
     List<Exam> findByModeratorId(long moderatorId);

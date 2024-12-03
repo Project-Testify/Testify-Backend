@@ -16,7 +16,7 @@ public interface ExamSetterService {
 
     GenericAddOrUpdateResponse addSetterToOrganization(String token);
 
-    Set<ExamResponse> getExamsForProctor(Long proctorId, Long organizationId);
+    List<ExamResponse> getExamsForProctor(Long proctorId, Long organizationId);
 
     Set<CandidateResponse> getCandidatesForExam(Long examId);
     List<ModerateExamResponse> getModeratingExams(long examSetterId);
