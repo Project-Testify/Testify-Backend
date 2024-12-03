@@ -1,10 +1,12 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.model.CandidateExamSession;
+import com.testify.Testify_Backend.model.ExamCandidateGrade;
 import com.testify.Testify_Backend.model.Grade;
 import com.testify.Testify_Backend.requests.exam_management.ExamCandidateGradeRequest;
 import com.testify.Testify_Backend.responses.EssayDetailsResponse;
 import com.testify.Testify_Backend.responses.McqDetailsResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamCandidateGradeResponse;
 import com.testify.Testify_Backend.service.GradingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,12 @@ public class GradingController {
     @PostMapping("/setExamCandidateGrade")
     public ResponseEntity<String> setExamCandidateGrade(@RequestBody ExamCandidateGradeRequest examCandidateGradeRequest) {
         String response = gradingService.setExamCandidateGrade(examCandidateGradeRequest);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/getExamCandidateGrade")
+    public ResponseEntity<List<ExamCandidateGradeResponse>> getExamCandidateGrade() {
+        List<ExamCandidateGradeResponse> response = gradingService.getExamCandidateGrade();
         return ResponseEntity.ok(response);
     }
 

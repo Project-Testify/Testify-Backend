@@ -117,4 +117,5 @@ public class Exam {
     @Column(nullable = false)
     private boolean hosted = false;
 
+
 }
