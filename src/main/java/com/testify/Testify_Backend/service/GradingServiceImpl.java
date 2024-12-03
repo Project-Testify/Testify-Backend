@@ -1,17 +1,17 @@
 package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.*;
-import com.testify.Testify_Backend.repository.CandidateExamAnswerRepository;
-import com.testify.Testify_Backend.repository.ExamSessionRepository;
-import com.testify.Testify_Backend.repository.GradeRepository;
-import com.testify.Testify_Backend.repository.QuestionRepository;
+import com.testify.Testify_Backend.repository.*;
+import com.testify.Testify_Backend.requests.exam_management.ExamCandidateGradeRequest;
 import com.testify.Testify_Backend.responses.EssayDetailsResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +23,7 @@ public class GradingServiceImpl implements GradingService {
     private final CandidateExamAnswerRepository candidateExamAnswerRepository;
     private final GradeRepository gradeRepository;
     private final ExamSessionRepository examSessionRepository;
+    private final ExamCandidateGradeRepository examCandidateGradeRepository;
 
     @Override
     @Transactional
@@ -41,8 +42,7 @@ public class GradingServiceImpl implements GradingService {
         return essayQuestions.stream().map(essayQuestion -> {
             // Fetch the candidate's answer for the essay question
             CandidateExamAnswer candidateAnswer = candidateExamAnswerRepository
-                    .findByCandidateExamSessionIdAndQuestionId(candidateExamSession.getId(), essayQuestion.getId())
-                    .orElse(null);
+                    .findByCandidateExamSessionIdAndQuestionId(candidateExamSession.getId(), essayQuestion.getId());
 
             String answerText = "";
             if(candidateAnswer != null) {
@@ -78,4 +78,47 @@ public class GradingServiceImpl implements GradingService {
 
         return grades;
     }
+
+    @Override
+    @Transactional
+    public List<Map<String, String>> getQuestionAndOptionBySessionId(Long sessionId) {
+        List<CandidateExamAnswer> answers = candidateExamAnswerRepository.findByCandidateExamSessionId(sessionId);
+
+        // Transform the list of answers into a list of maps containing questionId and optionId
+        return answers.stream()
+                .map(answer -> {
+                    Map<String, String> result = new HashMap<>();
+                    result.put("questionId", String.valueOf(answer.getQuestion().getId()));
+                    CandidateExamAnswer candidateAnswer = candidateExamAnswerRepository
+                            .findByCandidateExamSessionIdAndQuestionId(sessionId, answer.getQuestion().getId());
+
+                    MCQOption optionId = null;
+                    if(candidateAnswer != null) {
+                        optionId = candidateExamAnswerRepository.findMcqAnswerTextById(candidateAnswer.getId());
+                    }
+                    if(optionId != null) {
+                        result.put("optionId", String.valueOf(optionId.getId()));
+                    }else{
+                        result.put("optionId", null);
+                    }
+
+                    return result;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public String  setExamCandidateGrade(ExamCandidateGradeRequest examCandidateGradeRequest){
+        ExamCandidateGrade examCandidateGrade = new ExamCandidateGrade();
+        examCandidateGrade.setExamID(examCandidateGradeRequest.getExamID());
+        examCandidateGrade.setCandidateID(examCandidateGradeRequest.getCandidateID());
+        examCandidateGrade.setStatus(examCandidateGradeRequest.getStatus());
+        examCandidateGrade.setGrade(examCandidateGradeRequest.getGrade());
+        examCandidateGrade.setScore(examCandidateGradeRequest.getScore());
+        examCandidateGradeRepository.save(examCandidateGrade);
+        return "Grade set successfully";
+    }
+
+
 }
