@@ -111,6 +111,7 @@ public class ExamSetterServiceImpl implements ExamSetterService {
         return candidateResponses;
     }
 
+    @Transactional
     public List<ModerateExamResponse> getModeratingExams(long examSetterId) {
         return examRepository.findByModeratorId(examSetterId).stream()
                 .map(exam -> new ModerateExamResponse(

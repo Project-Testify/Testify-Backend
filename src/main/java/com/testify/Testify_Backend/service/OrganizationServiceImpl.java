@@ -195,7 +195,6 @@ public class OrganizationServiceImpl implements OrganizationService{
         return response;
     }
 
-
     public Set<CandidateGroupResponse> getCandidateGroupsByOrganization(Long organizationId) {
         Set<CandidateGroupResponse> candidateGroupsResponse = new HashSet<>();
         Set<CandidateGroup> candidateGroups = new HashSet<>();
