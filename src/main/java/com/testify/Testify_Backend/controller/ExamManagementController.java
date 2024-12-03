@@ -254,4 +254,14 @@ public class ExamManagementController {
         return ResponseEntity.ok(moderatorResponse); // Returns null in the body if no moderator exists
     }
 
+    @PostMapping("/question/comment")
+    public ResponseEntity<GenericAddOrUpdateResponse<QuestionCommentRequest>> updateQuestionComment(
+            @RequestBody QuestionCommentRequest request) {
+
+        GenericAddOrUpdateResponse<QuestionCommentRequest> response =
+                examManagementService.updateQuestionComment(request.getQuestionId(), request.getComment());
+
+        return ResponseEntity.ok(response);
+    }
+
 }

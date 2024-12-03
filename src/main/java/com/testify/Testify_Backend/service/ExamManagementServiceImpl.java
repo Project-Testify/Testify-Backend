@@ -456,6 +456,7 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                         .questionId(question.getId())
                         .questionText(question.getQuestionText())
                         .questionType(questionType)
+                        .comment(question.getComment())
                         .options(options)
                         .coverPoints(coverPoints)
                         .build();
@@ -1216,6 +1217,35 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         }
 
         return new ModeratorResponse(moderator.getEmail(), moderator.getFirstName(), moderator.getLastName());
+    }
+
+    @Transactional
+    public GenericAddOrUpdateResponse<QuestionCommentRequest> updateQuestionComment(
+            Long questionId, String comment) {
+
+        try {
+            // Find the question and ensure it is not deleted
+            Question question = questionRepository.findByIdAndIsDeletedFalse(questionId)
+                    .orElseThrow(() -> new RuntimeException("Question not found with ID: " + questionId));
+
+            // Update the comment (null is allowed to clear the comment)
+            question.setComment(comment);
+            Question savedQuestion = questionRepository.save(question);
+
+            // Return a successful response
+            return GenericAddOrUpdateResponse.<QuestionCommentRequest>builder()
+                    .success(true)
+                    .message("Comment updated successfully.")
+                    .id(savedQuestion.getId())
+                    .build();
+        } catch (RuntimeException ex) {
+            // Handle exceptions and return an appropriate error response
+            return GenericAddOrUpdateResponse.<QuestionCommentRequest>builder()
+                    .success(false)
+                    .message(ex.getMessage())
+                    .id(null)
+                    .build();
+        }
     }
 
 

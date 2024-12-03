@@ -3,11 +3,14 @@ package com.testify.Testify_Backend.service;
 import com.testify.Testify_Backend.model.ExamSetter;
 import com.testify.Testify_Backend.model.ExamSetterInvitation;
 import com.testify.Testify_Backend.model.Organization;
+import com.testify.Testify_Backend.repository.ExamRepository;
 import com.testify.Testify_Backend.repository.ExamSetterInvitationRepository;
 import com.testify.Testify_Backend.repository.ExamSetterRepository;
 import com.testify.Testify_Backend.repository.OrganizationRepository;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
 import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
+import com.testify.Testify_Backend.responses.examsetter_management.ModerateExamResponse;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +18,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +29,7 @@ public class ExamSetterServiceImpl implements ExamSetterService {
     private  final ExamSetterRepository examSetterRepository;
     private final ExamSetterInvitationRepository examSetterInvitationRepository;
     private final OrganizationRepository organizationRepository;
+    private final ExamRepository examRepository;
     
     @Autowired
     private ModelMapper modelMapper;
@@ -69,5 +75,16 @@ public class ExamSetterServiceImpl implements ExamSetterService {
         response.setSuccess(true);
         response.setMessage("Successfully added an organization");
         return response;
+    }
+
+    public List<ModerateExamResponse> getModeratingExams(long examSetterId) {
+        return examRepository.findByModeratorId(examSetterId).stream()
+                .map(exam -> new ModerateExamResponse(
+                        exam.getId(),
+                        exam.getTitle(),
+                        exam.getStartDatetime(),
+                        exam.getEndDatetime()
+                ))
+                .collect(Collectors.toList());
     }
 }

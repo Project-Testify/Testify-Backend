@@ -31,4 +31,7 @@ public abstract class Question {
 
     @Column(nullable = false)
     private String difficultyLevel;
+
+    @Column
+    private String comment; // New attribute
 }

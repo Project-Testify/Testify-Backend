@@ -59,4 +59,6 @@ public interface ExamManagementService {
 
     void assignModerator(Long examId, String moderatorEmail);
     ModeratorResponse getModeratorDetails(Long examId);
+
+    GenericAddOrUpdateResponse<QuestionCommentRequest> updateQuestionComment(Long questionId, String comment);
 }
