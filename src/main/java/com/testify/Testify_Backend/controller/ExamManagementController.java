@@ -83,6 +83,14 @@ public class ExamManagementController {
         return examManagementService.getAllQuestionsByExamId(examId);
     }
 
+    @GetMapping("/{examId}/questions/{sessionId}/answers")
+    public ResponseEntity<QuestionListResponse> getAllQuestionsAnswersByExamId(
+            @PathVariable long examId,
+            @PathVariable long sessionId) {
+
+        return examManagementService.getAllQuestionsAnswersByExamId(examId, sessionId);
+    }
+
     @PutMapping("/question/{questionId}")
     public ResponseEntity<GenericDeleteResponse<Void>> deleteQuestion(@PathVariable long questionId){
         return examManagementService.deleteQuestion(questionId);
@@ -153,6 +161,13 @@ public class ExamManagementController {
         } catch (Exception e) {
             return new ResponseEntity<>("Error saving answer: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @PutMapping("/{sessionId}/submit")
+    public ResponseEntity<String> submitExam(@PathVariable Long sessionId) {
+        examManagementService.markSessionAsComplete(sessionId);
+        return ResponseEntity.ok("Exam submitted successfully.");
+    }
     
     }
     @PostMapping("/{examId}/proctors")

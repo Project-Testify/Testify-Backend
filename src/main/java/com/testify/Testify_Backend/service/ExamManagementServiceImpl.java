@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.ErrorResponse;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -518,6 +519,120 @@ public class ExamManagementServiceImpl implements ExamManagementService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<QuestionListResponse> getAllQuestionsAnswersByExamId(long examId, long sessionId) {
+        QuestionListResponse response = new QuestionListResponse();
+        List<QuestionResponse> questionResponses = new ArrayList<>();
+
+        try {
+            // Extract username from JWT
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+            if (currentUserEmail == null) {
+                throw new IllegalStateException("No authenticated user found");
+            }
+
+            // Retrieve the session based on sessionId
+            Optional<CandidateExamSession> sessionOpt = examSessionRepository.findById(sessionId);
+            if (sessionOpt.isEmpty()) {
+                throw new IllegalStateException("Session not found");
+            }
+
+            CandidateExamSession session = sessionOpt.get();
+
+            // Check if the session is in progress (only proceed if it's false)
+            if (session.getInProgress()) {
+                return null;
+            }
+
+            // Fetch the role of the user
+            String role = userRepository.findByEmail(currentUserEmail)
+                    .map(user -> user.getRole().name()) // Convert UserRole enum to String
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            // Fetch questions associated with the exam ID that are not deleted
+            List<Question> questions = questionRepository.findAllActiveQuestionsByExamId(examId);
+            Optional<Exam> examOptional = examRepository.findById(examId);
+
+            if (examOptional.isEmpty()) {
+                throw new IllegalArgumentException("Exam not found for ID: " + examId);
+            }
+
+            System.out.println(role);
+
+            Exam exam = examOptional.get();
+            ExamType examType = exam.getExamType();
+
+            // Check if questions are found
+            if (questions.isEmpty()) {
+                // Return null instead of an error message
+                return ResponseEntity.ok(null);
+            }
+
+            for (Question question : questions) {
+                String questionType = question instanceof MCQ ? "MCQ" : "Essay";
+
+                List<MCQOptionResponse> options = null;
+                List<EssayCoverPointResponse> coverPoints = null;
+
+                // Populate options for MCQs
+                if (question instanceof MCQ) {
+                    options = ((MCQ) question).getOptions().stream()
+                            .map(option -> MCQOptionResponse.builder()
+                                    .optionId(option.getId())
+                                    .optionText(option.getOptionText())
+                                    // Exclude 'correct' flag if the user is a candidate
+                                    .correct(option.isCorrect())
+                                    .marks(option.getMarks())
+                                    .build())
+                            .collect(Collectors.toList());
+                }
+
+                // Populate cover points for essays
+                else if (question instanceof Essay) {
+                    // Exclude cover points if the user is a candidate
+                    if (!role.equals("CANDIDATE")) {
+                        coverPoints = ((Essay) question).getCoverPoints().stream()
+                                .map(point -> EssayCoverPointResponse.builder()
+                                        .coverPointId(point.getId())
+                                        .coverPointText(point.getCoverPointText())
+                                        .marks(point.getMarks())
+                                        .build())
+                                .collect(Collectors.toList());
+                    }
+                }
+
+                // Build the QuestionResponse object
+                QuestionResponse questionResponse = QuestionResponse.builder()
+                        .questionId(question.getId())
+                        .questionText(question.getQuestionText())
+                        .questionType(questionType)
+                        .options(options)
+                        .coverPoints(coverPoints)
+                        .build();
+
+                questionResponses.add(questionResponse);
+            }
+
+            // Set the response with the questions
+            response.setExamId(examId);
+            response.setExamType(examType);
+            response.setQuestions(questionResponses);
+            return ResponseEntity.ok(response);  // Return 200 OK with questions
+
+        } catch (IllegalArgumentException e) {
+            // Handle specific exceptions
+            response.setErrorMessage("Invalid request: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response); // Return 400 Bad Request
+        } catch (Exception e) {
+            // Log unexpected errors and return a server error response
+            log.error("Unexpected error retrieving questions for exam ID {}: {}", examId, e.getMessage(), e);
+            response.setErrorMessage("Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);  // Return 500 Internal Server Error
+        }
+    }
+
 
 
 
@@ -931,35 +1046,63 @@ public class ExamManagementServiceImpl implements ExamManagementService {
             answerText = null;
         }
 
-        // Handle answer saving based on question type
-        if (question.getType().equals(QuestionType.MCQ)) {
-            // Find the selected option for MCQ
-            MCQOption option = mcqOptionRepository.findById(optionId)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid option ID"));
+        // Check if an existing answer already exists for the given session and question
+        CandidateExamAnswer existingAnswer = candidateExamAnswerRepository
+                .findByCandidateExamSessionIdAndQuestionId(session.getId(), question.getId());
 
-            // Create and save the MCQAnswer
-            MCQAnswer mcqAnswer = new MCQAnswer();
-            mcqAnswer.setCandidateExamSession(session);
-            mcqAnswer.setQuestion(question);
-            mcqAnswer.setOption(option);  // Option is set for MCQ
+        if (existingAnswer != null) {
+            // Existing answer found, update it
+            if (question.getType().equals(QuestionType.MCQ)) {
+                // Find the selected option for MCQ
+                MCQOption option = mcqOptionRepository.findById(optionId)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid option ID"));
 
-            candidateExamAnswerRepository.save(mcqAnswer);
-        } else if (question.getType().equals(QuestionType.ESSAY)) {
-            // Create and save the EssayAnswer
-            EssayAnswer essayAnswer = new EssayAnswer();
-            essayAnswer.setCandidateExamSession(session);
-            essayAnswer.setQuestion(question);
-
-            // Set essay answer text, if provided
-            if (answerText != null) {
-                essayAnswer.setAnswerText(answerText);  // Only set if not null
+                MCQAnswer mcqAnswer = (MCQAnswer) existingAnswer;  // Cast to MCQAnswer if existing answer is MCQ
+                mcqAnswer.setOption(option != null ? option : null);  // Update the option
+                candidateExamAnswerRepository.save(mcqAnswer);  // Save updated MCQAnswer
+            } else if (question.getType().equals(QuestionType.ESSAY)) {
+                EssayAnswer essayAnswer = (EssayAnswer) existingAnswer;  // Cast to EssayAnswer if existing answer is Essay
+                essayAnswer.setAnswerText(answerText);  // Update the answerText
+                candidateExamAnswerRepository.save(essayAnswer);  // Save updated EssayAnswer
+            } else {
+                throw new IllegalArgumentException("Unsupported question type");
             }
-
-            candidateExamAnswerRepository.save(essayAnswer);
         } else {
-            throw new IllegalArgumentException("Unsupported question type");
+            // No existing answer found, create a new one
+            if (question.getType().equals(QuestionType.MCQ)) {
+                // Find the selected option for MCQ
+                MCQOption option = mcqOptionRepository.findById(optionId)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid option ID"));
+
+                // Create and save the new MCQAnswer
+                MCQAnswer mcqAnswer = new MCQAnswer();
+                mcqAnswer.setCandidateExamSession(session);
+                mcqAnswer.setQuestion(question);
+                mcqAnswer.setOption(option != null ? option : null);  // Only set if not null
+                candidateExamAnswerRepository.save(mcqAnswer);
+            } else if (question.getType().equals(QuestionType.ESSAY)) {
+                // Create and save the new EssayAnswer
+                EssayAnswer essayAnswer = new EssayAnswer();
+                essayAnswer.setCandidateExamSession(session);
+                essayAnswer.setQuestion(question);
+                essayAnswer.setAnswerText(answerText != null ? answerText : null);  // Only set if not null
+                candidateExamAnswerRepository.save(essayAnswer);
+            } else {
+                throw new IllegalArgumentException("Unsupported question type");
+            }
         }
     }
+
+    @Override
+    @Transactional
+    public void markSessionAsComplete(Long sessionId) {
+        CandidateExamSession session = examSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid session ID"));
+
+        session.setInProgress(false);
+        examSessionRepository.save(session);
+    }
+
     public ResponseEntity<GenericAddOrUpdateResponse> addProctorsToExam(long examId, List<String> proctorEmails) {
         Optional<Exam> optionalExam = examRepository.findById(examId);
         GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
