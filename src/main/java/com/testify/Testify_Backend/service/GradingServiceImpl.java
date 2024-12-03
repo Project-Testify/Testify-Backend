@@ -1,10 +1,8 @@
 package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.*;
-import com.testify.Testify_Backend.repository.CandidateExamAnswerRepository;
-import com.testify.Testify_Backend.repository.ExamSessionRepository;
-import com.testify.Testify_Backend.repository.GradeRepository;
-import com.testify.Testify_Backend.repository.QuestionRepository;
+import com.testify.Testify_Backend.repository.*;
+import com.testify.Testify_Backend.requests.exam_management.ExamCandidateGradeRequest;
 import com.testify.Testify_Backend.responses.EssayDetailsResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +23,7 @@ public class GradingServiceImpl implements GradingService {
     private final CandidateExamAnswerRepository candidateExamAnswerRepository;
     private final GradeRepository gradeRepository;
     private final ExamSessionRepository examSessionRepository;
+    private final ExamCandidateGradeRepository examCandidateGradeRepository;
 
     @Override
     @Transactional
@@ -106,6 +105,19 @@ public class GradingServiceImpl implements GradingService {
                     return result;
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public String  setExamCandidateGrade(ExamCandidateGradeRequest examCandidateGradeRequest){
+        ExamCandidateGrade examCandidateGrade = new ExamCandidateGrade();
+        examCandidateGrade.setExamID(examCandidateGradeRequest.getExamID());
+        examCandidateGrade.setCandidateID(examCandidateGradeRequest.getCandidateID());
+        examCandidateGrade.setStatus(examCandidateGradeRequest.getStatus());
+        examCandidateGrade.setGrade(examCandidateGradeRequest.getGrade());
+        examCandidateGrade.setScore(examCandidateGradeRequest.getScore());
+        examCandidateGradeRepository.save(examCandidateGrade);
+        return "Grade set successfully";
     }
 
 
