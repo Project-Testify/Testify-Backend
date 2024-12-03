@@ -116,4 +116,7 @@ public class Exam {
     @Column(nullable = false)
     private boolean hosted = false;
 
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProctorComment> proctorComments;
+
 }

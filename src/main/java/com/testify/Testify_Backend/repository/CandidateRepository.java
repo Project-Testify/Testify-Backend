@@ -3,6 +3,7 @@ package com.testify.Testify_Backend.repository;
 import com.testify.Testify_Backend.model.Candidate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 
 import java.time.LocalDateTime;
@@ -22,5 +23,8 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
     List<Candidate> findCandidatesAssignedToExamWithConflictingExams(Long examId, LocalDateTime startDatetime, LocalDateTime endDatetime);
 
     boolean existsByEmail(String currentUserEmail);
+
+    @Query("SELECT c FROM Candidate c JOIN c.exams e WHERE e.id = :examId")
+    Set<Candidate> findByExamId(@Param("examId") Long examId);
 }
 

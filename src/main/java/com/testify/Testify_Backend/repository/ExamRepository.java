@@ -32,6 +32,10 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     @Query("SELECT e FROM Exam e WHERE e.isPrivate = false")
     List<Exam> findAllPublicExams();
 
+    @Query("SELECT e FROM Exam e JOIN e.proctors p WHERE p.id = :proctorId AND e.organization.id = :organizationId")
+    List<Exam> findByProctorIdAndOrganizationId(@Param("proctorId") Long proctorId, @Param("organizationId") Long organizationId);
+
+
     List<Exam> findByModeratorId(long moderatorId);
 }
 

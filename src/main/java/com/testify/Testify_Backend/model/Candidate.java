@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -25,5 +26,8 @@ public class Candidate extends User{
 
     @ManyToMany(mappedBy = "candidates")
     private Set<Exam> exams;
+
+    @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProctorComment> comments;
 
 }

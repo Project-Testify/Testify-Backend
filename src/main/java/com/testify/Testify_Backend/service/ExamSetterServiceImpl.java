@@ -1,5 +1,12 @@
 package com.testify.Testify_Backend.service;
 
+import com.testify.Testify_Backend.model.*;
+import com.testify.Testify_Backend.repository.*;
+import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
+import com.testify.Testify_Backend.responses.exam_management.CandidateResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
+import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
+import jakarta.transaction.Transactional;
 import com.testify.Testify_Backend.model.ExamSetter;
 import com.testify.Testify_Backend.model.ExamSetterInvitation;
 import com.testify.Testify_Backend.model.Organization;
@@ -16,8 +23,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +39,8 @@ public class ExamSetterServiceImpl implements ExamSetterService {
     private final ExamSetterInvitationRepository examSetterInvitationRepository;
     private final OrganizationRepository organizationRepository;
     private final ExamRepository examRepository;
+    private final CandidateRepository candidateRepository;
+    private final ProctorCommentRepository proctorCommentRepository;
     
     @Autowired
     private ModelMapper modelMapper;
@@ -78,7 +88,29 @@ public class ExamSetterServiceImpl implements ExamSetterService {
         return response;
     }
 
+    @Override
     @Transactional
+    public List<ExamResponse> getExamsForProctor(Long proctorId, Long organizationId) {
+        List<Exam> exams = examRepository.findByProctorIdAndOrganizationId(proctorId, organizationId); // Ensure repository method returns a List
+        List<ExamResponse> examResponses = new ArrayList<>();
+        for (Exam exam : exams) {
+            examResponses.add(modelMapper.map(exam, ExamResponse.class));
+        }
+        return examResponses;
+    }
+
+
+    @Override
+    public Set<CandidateResponse> getCandidatesForExam(Long examId) {
+        Set<Candidate> candidates = candidateRepository.findByExamId(examId);
+        Set<CandidateResponse> candidateResponses = new HashSet<>();
+        for (Candidate candidate : candidates) {
+            candidateResponses.add(modelMapper.map(candidate, CandidateResponse.class));
+        }
+
+        return candidateResponses;
+    }
+
     public List<ModerateExamResponse> getModeratingExams(long examSetterId) {
         return examRepository.findByModeratorId(examSetterId).stream()
                 .map(exam -> new ModerateExamResponse(
@@ -88,5 +120,20 @@ public class ExamSetterServiceImpl implements ExamSetterService {
                         exam.getEndDatetime()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void addCommentToCandidate(Long candidateId, Long examId, String content) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new RuntimeException("Candidate not found"));
+        Exam exam = examRepository.findById(examId).orElseThrow(() -> new RuntimeException("Exam not found"));
+
+        ProctorComment comment = new ProctorComment();
+        comment.setCandidate(candidate);
+        comment.setExam(exam);
+        comment.setContent(content);
+        comment.setCreatedAt(LocalDateTime.now());
+
+        proctorCommentRepository.save(comment);
     }
 }
