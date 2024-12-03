@@ -1,6 +1,8 @@
 package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
+import com.testify.Testify_Backend.responses.exam_management.CandidateResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
 import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
 import com.testify.Testify_Backend.responses.examsetter_management.ModerateExamResponse;
 
@@ -14,5 +16,10 @@ public interface ExamSetterService {
 
     GenericAddOrUpdateResponse addSetterToOrganization(String token);
 
+    List<ExamResponse> getExamsForProctor(Long proctorId, Long organizationId);
+
+    Set<CandidateResponse> getCandidatesForExam(Long examId);
     List<ModerateExamResponse> getModeratingExams(long examSetterId);
+
+    void addCommentToCandidate(Long candidateId, Long examId, String content);
 }

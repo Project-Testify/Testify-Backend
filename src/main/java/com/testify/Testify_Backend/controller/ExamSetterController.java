@@ -1,6 +1,10 @@
 package com.testify.Testify_Backend.controller;
 
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
+import com.testify.Testify_Backend.responses.exam_management.CandidateResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
+import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
+import com.testify.Testify_Backend.service.ExamManagementService;
 import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
 import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
 import com.testify.Testify_Backend.responses.examsetter_management.ModerateExamResponse;
@@ -20,6 +24,7 @@ import java.util.Set;
 public class ExamSetterController {
     private static final Logger log = LoggerFactory.getLogger(ExamSetterController.class);
     private final ExamSetterService examSetterService;
+    private final ExamManagementService examManagementService;
 
     @GetMapping("/{setterId}/getOrganizations")
     public ResponseEntity<Set<OrganizationResponse>> getOrganizations(@PathVariable("setterId") long setterId) {
@@ -40,6 +45,17 @@ public class ExamSetterController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/proctor/{proctorId}/{organizationId}")
+    public ResponseEntity<List<ExamResponse>> getExamsForProctor(@PathVariable Long proctorId, @PathVariable Long organizationId) {
+        List<ExamResponse> exams = examSetterService.getExamsForProctor(proctorId, organizationId);
+        return ResponseEntity.ok(exams);
+    }
+
+    @GetMapping("/{examId}/candidates")
+    public ResponseEntity<Set<CandidateResponse>> getCandidatesForExam(@PathVariable Long examId) {
+        Set<CandidateResponse> candidates = examSetterService.getCandidatesForExam(examId);
+        return ResponseEntity.ok(candidates);
+    }
     @GetMapping("/{examSetterId}/moderating-exams")
     public ResponseEntity<List<ModerateExamResponse>> getModeratingExams(@PathVariable long examSetterId) {
         List<ModerateExamResponse> responses = examSetterService.getModeratingExams(examSetterId);
@@ -50,6 +66,12 @@ public class ExamSetterController {
         }
 
         return ResponseEntity.ok(responses);
+    }
+
+    @PostMapping("/{candidateId}/{examId}/proctorComments")
+    public ResponseEntity<String> addComment(@PathVariable Long candidateId, @PathVariable Long examId, @RequestBody String content) {
+        examSetterService.addCommentToCandidate(candidateId, examId, content);
+        return ResponseEntity.ok("Comment added successfully");
     }
 
 }
