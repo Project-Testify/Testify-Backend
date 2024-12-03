@@ -13,6 +13,7 @@ import com.testify.Testify_Backend.responses.exam_management.*;
 import com.testify.Testify_Backend.service.ExamManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -192,6 +193,99 @@ public class ExamManagementController {
     @GetMapping("/{examId}/conflicting-candidates")
     public ResponseEntity<List<CandidateConflictExamResponse>> getCandidateConflictingExams(@PathVariable Long examId) {
         List<CandidateConflictExamResponse> response = examManagementService.getCandidateConflictingExams(examId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{examId}/real-time-monitoring")
+    public ResponseEntity<GenericResponse> updateRealTimeMonitoring(
+            @PathVariable Long examId,
+            @RequestBody RealTimeMonitoringRequest dto) {
+        try {
+            // Delegate to the service and return the response directly
+            GenericResponse response = examManagementService.updateRealTimeMonitoring(examId, dto);
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(new GenericResponse("false", "Error: " + ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/{examId}/real-time-monitoring")
+    public ResponseEntity<RealTimeMonitoringResponse> getRealTimeMonitoringStatus(@PathVariable Long examId) {
+        try {
+            RealTimeMonitoringResponse response = examManagementService.getRealTimeMonitoringStatus(examId);
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @PutMapping("/{examId}/browser-lockdown")
+    public ResponseEntity<GenericResponse> updateBrowserLockdown(
+            @PathVariable Long examId,
+            @RequestParam boolean browserLockdown) {
+        try {
+            GenericResponse response = examManagementService.updateBrowserLockdown(examId, browserLockdown);
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(new GenericResponse("false", "Error: " + ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/{examId}/browser-lockdown")
+    public ResponseEntity<BrowserLockdownResponse> getBrowserLockdown(@PathVariable Long examId) {
+        try {
+            boolean browserLockdown = examManagementService.getBrowserLockdownStatus(examId);
+            return ResponseEntity.ok(new BrowserLockdownResponse(browserLockdown));
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(null); // Handle errors gracefully
+        }
+    }
+
+    @PutMapping("/{examId}/hosted")
+    public ResponseEntity<GenericResponse> updateHosted(@PathVariable Long examId, @RequestParam boolean hosted) {
+        try {
+            GenericResponse response = examManagementService.updateHostedStatus(examId, hosted);
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(new GenericResponse("false", "Error: " + ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/{examId}/hosted")
+    public ResponseEntity<HostedResponse> getHosted(@PathVariable Long examId) {
+        try {
+            boolean hosted = examManagementService.getHostedStatus(examId);
+            log.info(String.valueOf(hosted));
+            return ResponseEntity.ok(new HostedResponse(hosted));
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    @PostMapping("/{examId}/set-moderator")
+    public ResponseEntity<String> setModerator(@PathVariable Long examId, @RequestBody ModeratorRequest moderatorRequest) {
+        log.info("Setting moderator for examId: " + examId);
+        try {
+            examManagementService.assignModerator(examId, moderatorRequest.getModeratorEmail());
+            return ResponseEntity.ok("Moderator assigned successfully.");
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
+    }
+
+    @GetMapping("/{examId}/moderator")
+    public ResponseEntity<ModeratorResponse> getModerator(@PathVariable Long examId) {
+        ModeratorResponse moderatorResponse = examManagementService.getModeratorDetails(examId);
+        return ResponseEntity.ok(moderatorResponse); // Returns null in the body if no moderator exists
+    }
+
+    @PostMapping("/question/comment")
+    public ResponseEntity<GenericAddOrUpdateResponse<QuestionCommentRequest>> updateQuestionComment(
+            @RequestBody QuestionCommentRequest request) {
+
+        GenericAddOrUpdateResponse<QuestionCommentRequest> response =
+                examManagementService.updateQuestionComment(request.getQuestionId(), request.getComment());
+
         return ResponseEntity.ok(response);
     }
 

@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface QuestionRepository extends JpaRepository<Question, Long>{
     @Query("SELECT q FROM Question q WHERE q.exam.id = :examId AND q.isDeleted = false")
     List<Question> findAllActiveQuestionsByExamId(@Param("examId") long examId);
+
+    Optional<Question> findByIdAndIsDeletedFalse(Long id);
     List<Question> findByExamId(Long examId);
 
     @Query("SELECT e FROM Essay e WHERE e.exam.id = :examId")

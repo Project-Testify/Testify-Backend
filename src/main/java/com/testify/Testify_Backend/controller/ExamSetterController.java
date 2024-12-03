@@ -5,6 +5,9 @@ import com.testify.Testify_Backend.responses.exam_management.CandidateResponse;
 import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
 import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
 import com.testify.Testify_Backend.service.ExamManagementService;
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
+import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
+import com.testify.Testify_Backend.responses.examsetter_management.ModerateExamResponse;
 import com.testify.Testify_Backend.service.ExamSetterService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -53,4 +56,16 @@ public class ExamSetterController {
         Set<CandidateResponse> candidates = examSetterService.getCandidatesForExam(examId);
         return ResponseEntity.ok(candidates);
     }
+    @GetMapping("/{examSetterId}/moderating-exams")
+    public ResponseEntity<List<ModerateExamResponse>> getModeratingExams(@PathVariable long examSetterId) {
+        List<ModerateExamResponse> responses = examSetterService.getModeratingExams(examSetterId);
+
+        // Return null if no exams are found
+        if (responses.isEmpty()) {
+            return ResponseEntity.ok(null);
+        }
+
+        return ResponseEntity.ok(responses);
+    }
+
 }

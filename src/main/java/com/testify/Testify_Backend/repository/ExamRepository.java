@@ -36,5 +36,6 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     Set<Exam> findByProctorIdAndOrganizationId(@Param("proctorId") Long proctorId, @Param("organizationId") Long organizationId);
 
 
+    List<Exam> findByModeratorId(long moderatorId);
 }
 

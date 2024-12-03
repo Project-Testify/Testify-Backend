@@ -49,4 +49,18 @@ public interface ExamManagementService {
     List<ConflictExamResponse> getExamsScheduledBetween(Long examId);
 
     List<CandidateConflictExamResponse> getCandidateConflictingExams(Long examId);
+
+    GenericResponse updateRealTimeMonitoring(Long examId, RealTimeMonitoringRequest dto);
+    RealTimeMonitoringResponse getRealTimeMonitoringStatus(Long examId);
+
+    GenericResponse updateBrowserLockdown(Long examId, boolean browserLockdown);
+    boolean getBrowserLockdownStatus(Long examId);
+
+    GenericResponse updateHostedStatus(Long examId, boolean hosted);
+    boolean getHostedStatus(Long examId);
+
+    void assignModerator(Long examId, String moderatorEmail);
+    ModeratorResponse getModeratorDetails(Long examId);
+
+    GenericAddOrUpdateResponse<QuestionCommentRequest> updateQuestionComment(Long questionId, String comment);
 }

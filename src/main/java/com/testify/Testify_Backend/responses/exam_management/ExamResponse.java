@@ -1,6 +1,7 @@
 package com.testify.Testify_Backend.responses.exam_management;
 
 import com.testify.Testify_Backend.enums.OrderType;
+import jakarta.persistence.Column;
 import lombok.*;
 
 import java.time.LocalDateTime;

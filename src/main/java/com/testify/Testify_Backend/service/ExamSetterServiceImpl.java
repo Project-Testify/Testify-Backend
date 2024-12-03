@@ -7,6 +7,17 @@ import com.testify.Testify_Backend.responses.exam_management.CandidateResponse;
 import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
 import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
 import jakarta.transaction.Transactional;
+import com.testify.Testify_Backend.model.ExamSetter;
+import com.testify.Testify_Backend.model.ExamSetterInvitation;
+import com.testify.Testify_Backend.model.Organization;
+import com.testify.Testify_Backend.repository.ExamRepository;
+import com.testify.Testify_Backend.repository.ExamSetterInvitationRepository;
+import com.testify.Testify_Backend.repository.ExamSetterRepository;
+import com.testify.Testify_Backend.repository.OrganizationRepository;
+import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
+import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
+import com.testify.Testify_Backend.responses.examsetter_management.ModerateExamResponse;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +25,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -89,5 +105,14 @@ public class ExamSetterServiceImpl implements ExamSetterService {
             candidateResponses.add(modelMapper.map(candidate, CandidateResponse.class));
         }
         return candidateResponses;
+    public List<ModerateExamResponse> getModeratingExams(long examSetterId) {
+        return examRepository.findByModeratorId(examSetterId).stream()
+                .map(exam -> new ModerateExamResponse(
+                        exam.getId(),
+                        exam.getTitle(),
+                        exam.getStartDatetime(),
+                        exam.getEndDatetime()
+                ))
+                .collect(Collectors.toList());
     }
 }
