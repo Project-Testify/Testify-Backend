@@ -47,7 +47,6 @@ public class ExamManagementServiceImpl implements ExamManagementService {
     private final MCQOptionRepository mcqOptionRepository;
     private final CandidateGroupRepository candidateGroupRepository;
     private final EmailSender emailSender;
-
     private final ModelMapper modelMapper;
 
 

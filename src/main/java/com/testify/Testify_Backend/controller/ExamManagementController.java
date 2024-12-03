@@ -170,9 +170,7 @@ public class ExamManagementController {
     }
     
     @PostMapping("/{examId}/proctors")
-    public ResponseEntity<GenericAddOrUpdateResponse> addOrUpdateProctors(
-            @PathVariable Long examId,
-            @RequestBody List<String> emails) {
+    public ResponseEntity<GenericAddOrUpdateResponse> addOrUpdateProctors(@PathVariable Long examId, @RequestBody List<String> emails) {
         log.info("Adding proctors to examId: " + examId);
         log.info("Emails: " + emails);
         return examManagementService.addProctorsToExam(examId, emails);

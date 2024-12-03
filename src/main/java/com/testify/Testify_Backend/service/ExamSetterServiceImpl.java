@@ -9,9 +9,11 @@ import com.testify.Testify_Backend.responses.exam_management.OrganizationRespons
 import jakarta.transaction.Transactional;
 import com.testify.Testify_Backend.model.ExamSetter;
 import com.testify.Testify_Backend.model.ExamSetterInvitation;
+import com.testify.Testify_Backend.model.ExamSetterOrganization;
 import com.testify.Testify_Backend.model.Organization;
 import com.testify.Testify_Backend.repository.ExamRepository;
 import com.testify.Testify_Backend.repository.ExamSetterInvitationRepository;
+import com.testify.Testify_Backend.repository.ExamSetterOrganizationRepository;
 import com.testify.Testify_Backend.repository.ExamSetterRepository;
 import com.testify.Testify_Backend.repository.OrganizationRepository;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
@@ -44,10 +46,13 @@ public class ExamSetterServiceImpl implements ExamSetterService {
     
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private ExamSetterOrganizationRepository examSetterOrganizationRepository;
 
     @Override
     public Set<OrganizationResponse> getOrganizations(long setterId) {
         Optional<ExamSetter> examSetter = examSetterRepository.findById(setterId);
+
         Set<OrganizationResponse> organizationResponses = new HashSet<>();
         if (examSetter.isPresent()) {
             Set<Organization> organizations = examSetter.get().getOrganizations();
@@ -80,11 +85,34 @@ public class ExamSetterServiceImpl implements ExamSetterService {
         examSetter.getOrganizations().add(organization);
         organization.getExamSetters().add(examSetter);
 
+//        add to examSetterOrganization
+        ExamSetterOrganization examSetterOrganization = new ExamSetterOrganization();
+        examSetterOrganization.setOrganizationID(String.valueOf(organization.getId()));
+        examSetterOrganization.setExamSetterID(String.valueOf(examSetter.getId()));
+        examSetterOrganizationRepository.save(examSetterOrganization);
+
         examSetterRepository.save(examSetter);
         organizationRepository.save(organization);
 
         response.setSuccess(true);
         response.setMessage("Successfully added an organization");
+        return response;
+    }
+
+    @Override
+    public GenericAddOrUpdateResponse deleteSetter(String setterId, String organizationId) {
+        GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse();
+        ExamSetterOrganization examSetter =  examSetterOrganizationRepository.findByOrganizationIDAndExamSetterID(organizationId, setterId);
+        try{
+            examSetter.setDeleted(true);
+            examSetterOrganizationRepository.save(examSetter);
+            response.setSuccess(true);
+            response.setMessage("Successfully deleted the setter");
+        }
+        catch (Exception e){
+            response.setSuccess(false);
+            response.setMessage("Failed to delete the setter");
+        }
         return response;
     }
 
