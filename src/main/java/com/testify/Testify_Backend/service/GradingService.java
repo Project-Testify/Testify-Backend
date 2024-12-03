@@ -2,6 +2,7 @@ package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.CandidateExamSession;
 import com.testify.Testify_Backend.model.Grade;
+import com.testify.Testify_Backend.requests.exam_management.ExamCandidateGradeRequest;
 import com.testify.Testify_Backend.responses.EssayDetailsResponse;
 
 import java.util.List;
@@ -11,4 +12,5 @@ public interface GradingService {
     List<EssayDetailsResponse> getEssayDetails(Long examId, Long userId);
     List<Grade> getGradingSchemeForExam(Long examId);
     List<Map<String, String>> getQuestionAndOptionBySessionId(Long sessionId);
+    String setExamCandidateGrade(ExamCandidateGradeRequest examCandidateGradeRequest);
 }
