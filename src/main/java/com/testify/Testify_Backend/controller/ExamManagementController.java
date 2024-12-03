@@ -82,6 +82,14 @@ public class ExamManagementController {
         return examManagementService.getAllQuestionsByExamId(examId);
     }
 
+    @GetMapping("/{examId}/questions/{sessionId}/answers")
+    public ResponseEntity<QuestionListResponse> getAllQuestionsAnswersByExamId(
+            @PathVariable long examId,
+            @PathVariable long sessionId) {
+
+        return examManagementService.getAllQuestionsAnswersByExamId(examId, sessionId);
+    }
+
     @PutMapping("/question/{questionId}")
     public ResponseEntity<GenericDeleteResponse<Void>> deleteQuestion(@PathVariable long questionId){
         return examManagementService.deleteQuestion(questionId);

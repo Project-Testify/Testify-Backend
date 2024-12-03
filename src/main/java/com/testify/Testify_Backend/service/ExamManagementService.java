@@ -17,6 +17,7 @@ public interface ExamManagementService {
     ExamSessionResponse startExam(StartExamRequest request);
     void saveAnswer(Long sessionId, Long questionId, Long optionId, String answerText);
     void markSessionAsComplete(Long sessionId);
+    ResponseEntity<QuestionListResponse> getAllQuestionsAnswersByExamId(long examId, long sessionId);
 
     GenericAddOrUpdateResponse<MCQUpdateRequest> updateMCQQuestion(MCQUpdateRequest mcqUpdateRequest);
     GenericAddOrUpdateResponse<MCQRequest> saveMCQ(MCQRequest mcqRequest);

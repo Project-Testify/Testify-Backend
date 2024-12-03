@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.ErrorResponse;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -466,6 +467,120 @@ public class ExamManagementServiceImpl implements ExamManagementService {
                                     // Exclude 'correct' flag if the user is a candidate
                                     .correct(!role.equals("CANDIDATE") && option.isCorrect())
                                     .marks(role.equals("CANDIDATE") ? 0.00 : option.getMarks())
+                                    .build())
+                            .collect(Collectors.toList());
+                }
+
+                // Populate cover points for essays
+                else if (question instanceof Essay) {
+                    // Exclude cover points if the user is a candidate
+                    if (!role.equals("CANDIDATE")) {
+                        coverPoints = ((Essay) question).getCoverPoints().stream()
+                                .map(point -> EssayCoverPointResponse.builder()
+                                        .coverPointId(point.getId())
+                                        .coverPointText(point.getCoverPointText())
+                                        .marks(point.getMarks())
+                                        .build())
+                                .collect(Collectors.toList());
+                    }
+                }
+
+                // Build the QuestionResponse object
+                QuestionResponse questionResponse = QuestionResponse.builder()
+                        .questionId(question.getId())
+                        .questionText(question.getQuestionText())
+                        .questionType(questionType)
+                        .options(options)
+                        .coverPoints(coverPoints)
+                        .build();
+
+                questionResponses.add(questionResponse);
+            }
+
+            // Set the response with the questions
+            response.setExamId(examId);
+            response.setExamType(examType);
+            response.setQuestions(questionResponses);
+            return ResponseEntity.ok(response);  // Return 200 OK with questions
+
+        } catch (IllegalArgumentException e) {
+            // Handle specific exceptions
+            response.setErrorMessage("Invalid request: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response); // Return 400 Bad Request
+        } catch (Exception e) {
+            // Log unexpected errors and return a server error response
+            log.error("Unexpected error retrieving questions for exam ID {}: {}", examId, e.getMessage(), e);
+            response.setErrorMessage("Unexpected error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);  // Return 500 Internal Server Error
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<QuestionListResponse> getAllQuestionsAnswersByExamId(long examId, long sessionId) {
+        QuestionListResponse response = new QuestionListResponse();
+        List<QuestionResponse> questionResponses = new ArrayList<>();
+
+        try {
+            // Extract username from JWT
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+            if (currentUserEmail == null) {
+                throw new IllegalStateException("No authenticated user found");
+            }
+
+            // Retrieve the session based on sessionId
+            Optional<CandidateExamSession> sessionOpt = examSessionRepository.findById(sessionId);
+            if (sessionOpt.isEmpty()) {
+                throw new IllegalStateException("Session not found");
+            }
+
+            CandidateExamSession session = sessionOpt.get();
+
+            // Check if the session is in progress (only proceed if it's false)
+            if (session.getInProgress()) {
+                return null;
+            }
+
+            // Fetch the role of the user
+            String role = userRepository.findByEmail(currentUserEmail)
+                    .map(user -> user.getRole().name()) // Convert UserRole enum to String
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            // Fetch questions associated with the exam ID that are not deleted
+            List<Question> questions = questionRepository.findAllActiveQuestionsByExamId(examId);
+            Optional<Exam> examOptional = examRepository.findById(examId);
+
+            if (examOptional.isEmpty()) {
+                throw new IllegalArgumentException("Exam not found for ID: " + examId);
+            }
+
+            System.out.println(role);
+
+            Exam exam = examOptional.get();
+            ExamType examType = exam.getExamType();
+
+            // Check if questions are found
+            if (questions.isEmpty()) {
+                // Return null instead of an error message
+                return ResponseEntity.ok(null);
+            }
+
+            for (Question question : questions) {
+                String questionType = question instanceof MCQ ? "MCQ" : "Essay";
+
+                List<MCQOptionResponse> options = null;
+                List<EssayCoverPointResponse> coverPoints = null;
+
+                // Populate options for MCQs
+                if (question instanceof MCQ) {
+                    options = ((MCQ) question).getOptions().stream()
+                            .map(option -> MCQOptionResponse.builder()
+                                    .optionId(option.getId())
+                                    .optionText(option.getOptionText())
+                                    // Exclude 'correct' flag if the user is a candidate
+                                    .correct(option.isCorrect())
+                                    .marks(option.getMarks())
                                     .build())
                             .collect(Collectors.toList());
                 }

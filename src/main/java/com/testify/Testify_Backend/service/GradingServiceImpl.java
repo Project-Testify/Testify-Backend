@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,4 +79,34 @@ public class GradingServiceImpl implements GradingService {
 
         return grades;
     }
+
+    @Override
+    @Transactional
+    public List<Map<String, String>> getQuestionAndOptionBySessionId(Long sessionId) {
+        List<CandidateExamAnswer> answers = candidateExamAnswerRepository.findByCandidateExamSessionId(sessionId);
+
+        // Transform the list of answers into a list of maps containing questionId and optionId
+        return answers.stream()
+                .map(answer -> {
+                    Map<String, String> result = new HashMap<>();
+                    result.put("questionId", String.valueOf(answer.getQuestion().getId()));
+                    CandidateExamAnswer candidateAnswer = candidateExamAnswerRepository
+                            .findByCandidateExamSessionIdAndQuestionId(sessionId, answer.getQuestion().getId());
+
+                    MCQOption optionId = null;
+                    if(candidateAnswer != null) {
+                        optionId = candidateExamAnswerRepository.findMcqAnswerTextById(candidateAnswer.getId());
+                    }
+                    if(optionId != null) {
+                        result.put("optionId", String.valueOf(optionId.getId()));
+                    }else{
+                        result.put("optionId", null);
+                    }
+
+                    return result;
+                })
+                .collect(Collectors.toList());
+    }
+
+
 }
