@@ -13,5 +13,5 @@ import lombok.NoArgsConstructor;
 public class EssayAnswer extends CandidateExamAnswer {
 
     @Column(name = "answer_text")
-    private String answerText;  // The text answer for the essay question
+    private String answerText;
 }

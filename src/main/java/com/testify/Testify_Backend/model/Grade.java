@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,6 +25,7 @@ public class Grade {
 
     @ManyToOne
     @JoinColumn(name = "exam_id")
+    @JsonIgnore
     private Exam exam;
 
 }
