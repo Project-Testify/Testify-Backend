@@ -31,4 +31,8 @@ public class ExamResponse {
     private OrderType orderType;
     private FixedOrderResponse fixedOrder;
     private RandomOrderResponse randomOrder;
+    private boolean realTimeMonitoring;
+    private String zoomLink;
+    private boolean browserLockdown;
+    private boolean hosted;
 }

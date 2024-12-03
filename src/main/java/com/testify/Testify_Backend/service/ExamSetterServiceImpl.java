@@ -1,22 +1,19 @@
 package com.testify.Testify_Backend.service;
 
-import com.testify.Testify_Backend.model.ExamSetter;
-import com.testify.Testify_Backend.model.ExamSetterInvitation;
-import com.testify.Testify_Backend.model.Organization;
-import com.testify.Testify_Backend.repository.ExamSetterInvitationRepository;
-import com.testify.Testify_Backend.repository.ExamSetterRepository;
-import com.testify.Testify_Backend.repository.OrganizationRepository;
+import com.testify.Testify_Backend.model.*;
+import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.responses.GenericAddOrUpdateResponse;
+import com.testify.Testify_Backend.responses.exam_management.CandidateResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamResponse;
 import com.testify.Testify_Backend.responses.exam_management.OrganizationResponse;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +21,8 @@ public class ExamSetterServiceImpl implements ExamSetterService {
     private  final ExamSetterRepository examSetterRepository;
     private final ExamSetterInvitationRepository examSetterInvitationRepository;
     private final OrganizationRepository organizationRepository;
+    private final ExamRepository examRepository;
+    private final CandidateRepository candidateRepository;
     
     @Autowired
     private ModelMapper modelMapper;
@@ -69,5 +68,26 @@ public class ExamSetterServiceImpl implements ExamSetterService {
         response.setSuccess(true);
         response.setMessage("Successfully added an organization");
         return response;
+    }
+
+    @Override
+    @Transactional
+    public Set<ExamResponse> getExamsForProctor(Long proctorId, Long organizationId) {
+        Set<Exam> exams = examRepository.findByProctorIdAndOrganizationId(proctorId, organizationId);
+        Set<ExamResponse> examResponses = new HashSet<>();
+        for (Exam exam : exams) {
+            examResponses.add(modelMapper.map(exam, ExamResponse.class));
+        }
+        return examResponses;
+    }
+
+    @Override
+    public Set<CandidateResponse> getCandidatesForExam(Long examId) {
+        Set<Candidate> candidates = candidateRepository.findByExamId(examId);
+        Set<CandidateResponse> candidateResponses = new HashSet<>();
+        for (Candidate candidate : candidates) {
+            candidateResponses.add(modelMapper.map(candidate, CandidateResponse.class));
+        }
+        return candidateResponses;
     }
 }
