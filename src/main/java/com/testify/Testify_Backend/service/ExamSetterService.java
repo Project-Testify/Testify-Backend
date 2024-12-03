@@ -20,4 +20,6 @@ public interface ExamSetterService {
 
     Set<CandidateResponse> getCandidatesForExam(Long examId);
     List<ModerateExamResponse> getModeratingExams(long examSetterId);
+
+    void addCommentToCandidate(Long candidateId, Long examId, String content);
 }

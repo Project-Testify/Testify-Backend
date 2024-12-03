@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +40,7 @@ public class ExamSetterServiceImpl implements ExamSetterService {
     private final OrganizationRepository organizationRepository;
     private final ExamRepository examRepository;
     private final CandidateRepository candidateRepository;
+    private final ProctorCommentRepository proctorCommentRepository;
     
     @Autowired
     private ModelMapper modelMapper;
@@ -117,5 +119,20 @@ public class ExamSetterServiceImpl implements ExamSetterService {
                         exam.getEndDatetime()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void addCommentToCandidate(Long candidateId, Long examId, String content) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new RuntimeException("Candidate not found"));
+        Exam exam = examRepository.findById(examId).orElseThrow(() -> new RuntimeException("Exam not found"));
+
+        ProctorComment comment = new ProctorComment();
+        comment.setCandidate(candidate);
+        comment.setExam(exam);
+        comment.setContent(content);
+        comment.setCreatedAt(LocalDateTime.now());
+
+        proctorCommentRepository.save(comment);
     }
 }

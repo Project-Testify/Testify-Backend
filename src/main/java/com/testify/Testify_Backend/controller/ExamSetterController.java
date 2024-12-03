@@ -68,4 +68,10 @@ public class ExamSetterController {
         return ResponseEntity.ok(responses);
     }
 
+    @PostMapping("/{candidateId}/{examId}/proctorComments")
+    public ResponseEntity<String> addComment(@PathVariable Long candidateId, @PathVariable Long examId, @RequestBody String content) {
+        examSetterService.addCommentToCandidate(candidateId, examId, content);
+        return ResponseEntity.ok("Comment added successfully");
+    }
+
 }
