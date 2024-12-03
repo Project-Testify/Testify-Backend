@@ -42,13 +42,10 @@ public class ExamSetterController {
 
     @GetMapping("/{examSetterId}/moderating-exams")
     public ResponseEntity<List<ModerateExamResponse>> getModeratingExams(@PathVariable long examSetterId) {
+        log.info("Getting exams moderated by exam setter with ID: {}", examSetterId);
         List<ModerateExamResponse> responses = examSetterService.getModeratingExams(examSetterId);
 
-        // Return null if no exams are found
-        if (responses.isEmpty()) {
-            return ResponseEntity.ok(null);
-        }
-
+        // Directly return the list, which will be empty if no exams are found
         return ResponseEntity.ok(responses);
     }
 

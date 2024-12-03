@@ -326,8 +326,18 @@ public class AuthenticationService {
                 response.setEmail(user.getEmail());
                 response.setUserName(user.getUsername());
                 response.setRole(user.getRole());
-                response.setFirstName(user instanceof Candidate ? ((Candidate) user).getFirstName() : user instanceof Organization ? ((Organization) user).getFirstName() : ( user instanceof Admin ? ((Admin) user).getFirstName() : null ));
-                response.setLastName(user instanceof Candidate ? ((Candidate) user).getLastName() : null);
+                response.setFirstName(
+                        user instanceof Candidate ? ((Candidate) user).getFirstName() :
+                                user instanceof Organization ? ((Organization) user).getFirstName() :
+                                        user instanceof Admin ? ((Admin) user).getFirstName() :
+                                                user instanceof ExamSetter ? ((ExamSetter) user).getFirstName() : null
+                );
+
+                response.setLastName(
+                        user instanceof Candidate ? ((Candidate) user).getLastName() :
+                                user instanceof ExamSetter ? ((ExamSetter) user).getLastName() : null
+                );
+
 
             } catch (Exception e) {
                 response.setSuccess(false);

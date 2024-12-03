@@ -16,6 +16,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +78,7 @@ public class ExamSetterServiceImpl implements ExamSetterService {
         return response;
     }
 
+    @Transactional
     public List<ModerateExamResponse> getModeratingExams(long examSetterId) {
         return examRepository.findByModeratorId(examSetterId).stream()
                 .map(exam -> new ModerateExamResponse(
