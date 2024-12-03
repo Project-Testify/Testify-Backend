@@ -153,6 +153,7 @@ public class ExamManagementController {
         } catch (Exception e) {
             return new ResponseEntity<>("Error saving answer: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
     
     @PostMapping("/{examId}/proctors")
     public ResponseEntity<GenericAddOrUpdateResponse> addOrUpdateProctors(
