@@ -1,6 +1,8 @@
 package com.testify.Testify_Backend.model;
 import com.testify.Testify_Backend.converter.QuestionSequenceConverter;
+import com.testify.Testify_Backend.enums.ExamType;
 import com.testify.Testify_Backend.enums.OrderType;
+import com.testify.Testify_Backend.enums.QuestionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -53,6 +55,10 @@ public class Exam {
 
     @Column
     private String topics;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "exam_type")
+    private ExamType examType;
 
     @Column(nullable = false)
     private boolean isPrivate;

@@ -13,4 +13,5 @@ public interface QuestionRepository extends JpaRepository<Question, Long>{
     List<Question> findAllActiveQuestionsByExamId(@Param("examId") long examId);
 
     Optional<Question> findByIdAndIsDeletedFalse(Long id);
+    List<Question> findByExamId(Long examId);
 }
