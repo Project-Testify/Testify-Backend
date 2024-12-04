@@ -1133,9 +1133,15 @@ public class ExamManagementServiceImpl implements ExamManagementService {
 
         return new CandidateExamAnswerResponse(
                 session.getExam().getId(),
+                session.getExam().getTitle(),
+                session.getExam().getExamType(),
+                session.getId(),
+                session.getEndTime(),
                 answerDetails
         );
     }
+
+
 
     public ResponseEntity<GenericAddOrUpdateResponse> addProctorsToExam(long examId, List<String> proctorEmails) {
         Optional<Exam> optionalExam = examRepository.findById(examId);

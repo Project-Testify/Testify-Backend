@@ -2,6 +2,7 @@ package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
+import com.testify.Testify_Backend.requests.exam_management.CandidateExamDetailsDTO;
 import com.testify.Testify_Backend.requests.exam_management.ExamCandidateGradeRequest;
 import com.testify.Testify_Backend.responses.EssayDetailsResponse;
 import com.testify.Testify_Backend.responses.exam_management.ExamCandidateGradeResponse;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -151,4 +153,5 @@ public class GradingServiceImpl implements GradingService {
 
         return examCandidateGradeResponses;
     }
+
 }

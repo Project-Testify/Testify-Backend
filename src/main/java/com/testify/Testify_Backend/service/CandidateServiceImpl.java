@@ -1,11 +1,9 @@
 package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.enums.ExamStatus;
-import com.testify.Testify_Backend.model.Candidate;
-import com.testify.Testify_Backend.model.CandidateExamSession;
-import com.testify.Testify_Backend.model.Exam;
-import com.testify.Testify_Backend.model.Organization;
+import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
+import com.testify.Testify_Backend.requests.exam_management.CandidateExamDetailsDTO;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateResponse;
@@ -55,6 +53,8 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Autowired
     private final ExamSessionRepository examSessionRepository;
+
+    private final ExamCandidateGradeRepository examCandidateGradeRepository;
 
     @Override
     public List<CandidateExam> getCandidateExams(String status) {
@@ -231,6 +231,33 @@ public class CandidateServiceImpl implements CandidateService {
         }else{
             return VarList.RSP_NO_DATA_FOUND;
         }
+    }
+
+    @Override
+    @Transactional
+    public List<CandidateExamDetailsDTO> getCandidateExamDetails(String candidateId) {
+        // Retrieve all grade details for the candidate
+        List<ExamCandidateGrade> grades = examCandidateGradeRepository.findByCandidateID(candidateId);
+
+        // Map the results to CandidateExamDetailsDTO
+        return grades.stream().map(candidateGrade -> {
+            Optional<Exam> examOptional = examRepository.findById(Long.valueOf(candidateGrade.getExamID()));
+
+            if (examOptional.isPresent()) {
+                Exam exam = examOptional.get();
+                Organization organization = exam.getOrganization();
+
+                // Return the data in the DTO format
+                return new CandidateExamDetailsDTO(
+                        candidateGrade.getGrade(),
+                        candidateGrade.getScore(),
+                        exam.getTitle(),
+                        organization != null ? organization.getFirstName() : "No Organization"
+                );
+            }
+
+            return null; // Or handle cases where the exam is not found
+        }).collect(Collectors.toList());
     }
 
 }
