@@ -1,5 +1,6 @@
 package com.testify.Testify_Backend.model;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,8 +14,7 @@ import org.springframework.data.annotation.Id;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExamCandidateGrade {
-
+public class ExamSetterOrganization {
     @Setter
     @jakarta.persistence.Id
     @Id
@@ -23,18 +23,15 @@ public class ExamCandidateGrade {
     private Long id;
 
     @Column(nullable = false)
-    private String examID;
+    private String organizationID;
 
     @Column(nullable = false)
-    private String candidateID;
+    private String examSetterID;
 
-    private String status;
-
-    private String grade;
-
-    private String score;
+    private boolean isDeleted = false;
 
     public Long getId() {
         return id;
     }
+
 }

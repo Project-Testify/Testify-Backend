@@ -92,6 +92,7 @@ public class Exam {
             joinColumns = @JoinColumn(name = "exam_id"),
             inverseJoinColumns = @JoinColumn(name = "candidate_id")
     )
+
     private Set<Candidate> candidates;
 
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
@@ -103,5 +104,20 @@ public class Exam {
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Grade> gradings;
+
+    @Column(nullable = false)
+    private boolean realTimeMonitoring = false;
+
+    @Column
+    private String zoomLink;
+
+    @Column(nullable = false)
+    private boolean browserLockdown = false;
+
+    @Column(nullable = false)
+    private boolean hosted = false;
+
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProctorComment> proctorComments;
 
 }

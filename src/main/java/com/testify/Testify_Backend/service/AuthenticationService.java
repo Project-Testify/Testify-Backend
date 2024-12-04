@@ -54,6 +54,8 @@ public class AuthenticationService {
 
     private final VerificationRequestRepository verificationRequestRepository;
 
+    private final ExamSetterOrganizationRepository examSetterOrganizationRepository;
+
     private User user;
 
 
@@ -114,6 +116,14 @@ public class AuthenticationService {
                     invitation.setAccepted(true);
                     examSetterInvitationRepository.save(invitation);
                 });
+
+//                add to examSetterOrganization
+                ExamSetterOrganization examSetterOrganization = new ExamSetterOrganization();
+                examSetterOrganization.setOrganizationID(String.valueOf(organization.getId()));
+                examSetterOrganization.setExamSetterID(String.valueOf(examSetter.getId()));
+                examSetterOrganizationRepository.save(examSetterOrganization);
+
+
             } else if (request.getRole().equals(UserRole.ORGANIZATION)) {
                 System.out.println("Organization");
                 Organization organization = Organization.builder()
@@ -217,10 +227,10 @@ public class AuthenticationService {
             // Log the confirmation link
             log.info("Confirmation link: {}", link);
 
-//            emailSender.send(
-//                    request.getEmail(),
-//                    buildEmail(request.getEmail(), link)
-//            );
+            emailSender.send(
+                    request.getEmail(),
+                    buildEmail(request.getEmail(), link)
+            );
 
             //TODO: save jwt token
             var jwtToken = jwtService.generateToken(savedUser);
@@ -326,8 +336,18 @@ public class AuthenticationService {
                 response.setEmail(user.getEmail());
                 response.setUserName(user.getUsername());
                 response.setRole(user.getRole());
-                response.setFirstName(user instanceof Candidate ? ((Candidate) user).getFirstName() : user instanceof Organization ? ((Organization) user).getFirstName() : ( user instanceof Admin ? ((Admin) user).getFirstName() : null ));
-                response.setLastName(user instanceof Candidate ? ((Candidate) user).getLastName() : null);
+                response.setFirstName(
+                        user instanceof Candidate ? ((Candidate) user).getFirstName() :
+                                user instanceof Organization ? ((Organization) user).getFirstName() :
+                                        user instanceof Admin ? ((Admin) user).getFirstName() :
+                                                user instanceof ExamSetter ? ((ExamSetter) user).getFirstName() : null
+                );
+
+                response.setLastName(
+                        user instanceof Candidate ? ((Candidate) user).getLastName() :
+                                user instanceof ExamSetter ? ((ExamSetter) user).getLastName() : null
+                );
+
 
             } catch (Exception e) {
                 response.setSuccess(false);

@@ -5,11 +5,13 @@ import com.testify.Testify_Backend.repository.*;
 import com.testify.Testify_Backend.requests.exam_management.CandidateExamDetailsDTO;
 import com.testify.Testify_Backend.requests.exam_management.ExamCandidateGradeRequest;
 import com.testify.Testify_Backend.responses.EssayDetailsResponse;
+import com.testify.Testify_Backend.responses.exam_management.ExamCandidateGradeResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ public class GradingServiceImpl implements GradingService {
     private final ExamSessionRepository examSessionRepository;
     private final ExamCandidateGradeRepository examCandidateGradeRepository;
     private final ExamRepository examRepository;
+    private final CandidateRepository candidateRepository;
 
     @Override
     @Transactional
@@ -123,7 +126,32 @@ public class GradingServiceImpl implements GradingService {
         return "Grade set successfully";
     }
 
+    @Override
+    @Transactional
+    public List<ExamCandidateGradeResponse> getExamCandidateGrade() {
+//        initialize the response list
+        List<ExamCandidateGradeResponse> examCandidateGradeResponses = new ArrayList<>();
+        List<ExamCandidateGrade> examCandidateGrades = examCandidateGradeRepository.findAll();
+        if (examCandidateGrades == null || examCandidateGrades.isEmpty()) {
+            throw new IllegalArgumentException("No exam candidate grades found");
+        }
 
+        examCandidateGrades.forEach(examCandidateGrade -> {
+            ExamCandidateGradeResponse response = new ExamCandidateGradeResponse();
+            Exam exam = examRepository.findById(Long.parseLong(examCandidateGrade.getExamID().toString())).orElseThrow(() -> new IllegalArgumentException("Exam not found"));
+            Candidate candidate = candidateRepository.findById(Long.parseLong(examCandidateGrade.getCandidateID().toString())).orElseThrow(() -> new IllegalArgumentException("Candidate not found"));
+            response.setExamID(String.valueOf(exam.getId()));
+            response.setCandidateID(String.valueOf(candidate.getId()));
+            response.setExamTitle(exam.getTitle());
+            response.setCandidateName(candidate.getFirstName() + " " + candidate.getLastName());
+            response.setStatus(examCandidateGrade.getStatus());
+            response.setGrade(examCandidateGrade.getGrade());
+            response.setScore(examCandidateGrade.getScore());
 
+            examCandidateGradeResponses.add(response);
+            });
+
+        return examCandidateGradeResponses;
+    }
 
 }

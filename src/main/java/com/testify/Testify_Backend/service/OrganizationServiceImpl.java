@@ -49,6 +49,8 @@ public class OrganizationServiceImpl implements OrganizationService{
 
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private ExamSetterOrganizationRepository examSetterOrganizationRepository;
 
     @Override
     public ResponseEntity<GenericAddOrUpdateResponse> addSetterToOrganization(long organizationId, AddExamSetterRequest request) {
@@ -173,6 +175,7 @@ public class OrganizationServiceImpl implements OrganizationService{
                 .collect(Collectors.toSet());
     }
     @Override
+    @Transactional
     public GenericAddOrUpdateResponse<CandidateGroupRequest> createCandidateGroup(long organizationId, CandidateGroupRequest candidateGroupRequest){
 
         GenericAddOrUpdateResponse<CandidateGroupRequest> response = new GenericAddOrUpdateResponse<>();
@@ -196,6 +199,7 @@ public class OrganizationServiceImpl implements OrganizationService{
     }
 
 
+    @Transactional
     public Set<CandidateGroupResponse> getCandidateGroupsByOrganization(Long organizationId) {
         Set<CandidateGroupResponse> candidateGroupsResponse = new HashSet<>();
         Set<CandidateGroup> candidateGroups = new HashSet<>();
@@ -207,6 +211,7 @@ public class OrganizationServiceImpl implements OrganizationService{
     }
 
     @Override
+    @Transactional
     public GenericAddOrUpdateResponse addCandidateToGroup(long groupId, String name, String email) {
         GenericAddOrUpdateResponse response = new GenericAddOrUpdateResponse<>();
         CandidateGroup candidateGroup = candidateGroupRepository.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Group not found"));
@@ -220,6 +225,7 @@ public class OrganizationServiceImpl implements OrganizationService{
     }
 
     @Override
+    @Transactional
     public GenericDeleteResponse deleteGroup(long groupId) {
         CandidateGroup candidateGroup = candidateGroupRepository.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Group not found"));
         candidateGroupRepository.delete(candidateGroup);
@@ -230,6 +236,7 @@ public class OrganizationServiceImpl implements OrganizationService{
     }
 
     @Override
+    @Transactional
     public GenericDeleteResponse deleteCandidate(long groupId, long candidateId) {
         CandidateGroup candidateGroup = candidateGroupRepository.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Group not found"));
         candidateGroup.getCandidates().removeIf(candidate -> candidate.getId() == candidateId);
@@ -241,6 +248,7 @@ public class OrganizationServiceImpl implements OrganizationService{
     }
 
     @Override
+    @Transactional
     public GenericAddOrUpdateResponse updateCandidateGroup(long groupId, String groupName) {
         CandidateGroup candidateGroup = candidateGroupRepository.findById(groupId).orElseThrow(() -> new IllegalArgumentException("Group not found"));
         candidateGroup.setName(groupName);
@@ -253,8 +261,18 @@ public class OrganizationServiceImpl implements OrganizationService{
 
     @Override
     public Set<ExamSetter> getExamSetters(long organizationId) {
-        Organization organization = organizationRepository.findById(organizationId).orElseThrow(() -> new IllegalArgumentException("Organization not found"));
-        return organization.getExamSetters();
+        // Fetch the organization and its associated ExamSetters
+        Organization organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+
+        // Fetch active ExamSetter IDs from ExamSetterOrganization table
+        List<String> activeExamSetterIDs = examSetterOrganizationRepository.findActiveExamSetterIDs(String.valueOf(organizationId));
+
+        // Filter ExamSetters linked to the organization based on active IDs
+        return organization.getExamSetters().stream()
+                .filter(examSetter -> activeExamSetterIDs.contains(String.valueOf(examSetter.getId())))
+                .collect(Collectors.toSet());
+
     }
 
     @Override

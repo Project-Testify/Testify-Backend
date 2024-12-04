@@ -11,6 +11,7 @@ import com.testify.Testify_Backend.responses.candidate_management.OrganizationCa
 import java.util.List;
 
 public interface CandidateService {
+
     List<CandidateResponse> getAllCandidatesForSearch();
 //    temp comment
     public List<CandidateExam> getCandidateExams(String status);
