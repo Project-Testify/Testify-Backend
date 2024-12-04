@@ -2,6 +2,7 @@ package com.testify.Testify_Backend.service;
 
 import com.testify.Testify_Backend.model.*;
 import com.testify.Testify_Backend.repository.*;
+import com.testify.Testify_Backend.requests.exam_management.CandidateExamDetailsDTO;
 import com.testify.Testify_Backend.requests.exam_management.ExamCandidateGradeRequest;
 import com.testify.Testify_Backend.responses.EssayDetailsResponse;
 import jakarta.transaction.Transactional;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +26,7 @@ public class GradingServiceImpl implements GradingService {
     private final GradeRepository gradeRepository;
     private final ExamSessionRepository examSessionRepository;
     private final ExamCandidateGradeRepository examCandidateGradeRepository;
+    private final ExamRepository examRepository;
 
     @Override
     @Transactional
@@ -119,6 +122,8 @@ public class GradingServiceImpl implements GradingService {
         examCandidateGradeRepository.save(examCandidateGrade);
         return "Grade set successfully";
     }
+
+
 
 
 }

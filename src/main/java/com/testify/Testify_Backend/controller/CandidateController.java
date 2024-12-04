@@ -4,6 +4,7 @@ import com.testify.Testify_Backend.model.Candidate;
 import com.testify.Testify_Backend.model.Organization;
 import com.testify.Testify_Backend.repository.CandidateRepository;
 import com.testify.Testify_Backend.requests.exam_management.CandidateExamAnswerRequest;
+import com.testify.Testify_Backend.requests.exam_management.CandidateExamDetailsDTO;
 import com.testify.Testify_Backend.responses.GenericResponse;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateExam;
 import com.testify.Testify_Backend.responses.candidate_management.CandidateResponse;
@@ -102,6 +103,11 @@ public class CandidateController {
     @PostMapping("/check-active-session")
     public CandidateExamAnswerResponse getCandidateAnswers(@RequestBody CandidateExamAnswerRequest request) {
         return examManagementService.getCandidateAnswers(request.getCandidateId());
+    }
+
+    @GetMapping("/{id}/exam-details")
+    public List<CandidateExamDetailsDTO> getCandidateExamDetails(@PathVariable String id) {
+        return candidateService.getCandidateExamDetails(id);
     }
 
 }
